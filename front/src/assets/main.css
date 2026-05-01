@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2c3e6b;
+  --color-primary-hover: #1e2d52;
+  --color-accent: #5b6fd6;
+  --color-accent-hover: #4a5ec4;
+  --color-danger: #e53935;
+  --color-success: #22a745;
+  --color-bg: #f5f7fb;
+}
+
+body {
+  font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+}
