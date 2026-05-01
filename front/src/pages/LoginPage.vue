@@ -99,7 +99,7 @@ function handleLogin() {
   );
   if (matched) {
     localStorage.setItem("currentUser", JSON.stringify(matched));
-    router.push("/dashboard");
+    router.push("/app/dashboard");
   } else {
     loginError.value = "아이디 또는 비밀번호가 올바르지 않습니다.";
   }
