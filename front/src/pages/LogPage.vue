@@ -53,13 +53,13 @@ const logs = [
 
 function badgeClass(eventType) {
   const map = {
-    '파일 업로드':   'bg-[#e8edf7] text-[#1e2d52]',
-    '분석 완료':     'bg-[#ddf0e8] text-[#2a7a56]',
-    '파일 다운로드': 'bg-[#e0f0fb] text-[#2980b9]',
-    '로그인':        'bg-[#ede8f5] text-[#6248a0]',
-    '로그아웃':      'bg-[#f0f3fa] text-[#7a8db3]',
-    '영상 삭제':     'bg-[#e6eaf4] text-[#3b4f82]',
+    '파일 업로드':   'bg-blue-100 text-[#2c3e6b]',
+    '분석 완료':     'bg-green-100 text-green-700',
+    '파일 다운로드': 'bg-yellow-100 text-yellow-700',
+    '로그인':        'bg-purple-100 text-purple-700',
+    '로그아웃':      'bg-gray-100 text-gray-500',
+    '영상 삭제':     'bg-red-100 text-red-600',
   }
-  return map[eventType] ?? 'bg-[#f0f3fa] text-[#7a8db3]'
+  return map[eventType] ?? 'bg-gray-100 text-gray-500'
 }
 </script>
