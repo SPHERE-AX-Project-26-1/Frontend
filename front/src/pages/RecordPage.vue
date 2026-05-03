@@ -124,23 +124,16 @@
           </div>
         </div>
 
-        <!-- 썸네일 -->
-        <div class="relative bg-gray-100 h-36 flex items-center justify-center">
-          <span class="text-3xl text-gray-300">▶</span>
-          <span
-            v-if="getSeverity(video.ganjunchiCount) !== '정상'"
-            :class="
-              getSeverity(video.ganjunchiCount) === '위험'
-                ? 'bg-red-500'
-                : 'bg-yellow-400'
-            "
-            class="absolute top-2 right-2 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-            ⚠ {{ getSeverity(video.ganjunchiCount) }}
-          </span>
-          <div
-            v-if="isDeleteMode"
-            class="absolute inset-0 bg-black/20 flex items-center justify-center"
-            @click.stop="toggleSelect(video.id)">
+          <!-- 썸네일 -->
+          <div class="relative bg-gray-100 h-36 flex items-center justify-center">
+            <span class="text-3xl text-gray-300">▶</span>
+            <span
+              v-if="getSeverity(video.ganjunchiCount) !== '보통'"
+              :class="getSeverity(video.ganjunchiCount) === '위험' ? 'bg-red-500' : 'bg-yellow-400'"
+              class="absolute top-2 right-2 text-white text-xs font-bold px-2 py-0.5 rounded-full"
+            >
+              ⚠ {{ getSeverity(video.ganjunchiCount) }}
+            </span>
             <div
               :class="
                 selectedIds.includes(video.id)
@@ -227,9 +220,9 @@ const activeVideo = ref(null);
 const regions = computed(() => [...new Set(videos.value.map((v) => v.region))]);
 
 function getSeverity(count) {
-  if (count >= 10) return "위험";
-  if (count >= 5) return "주의";
-  return "정상";
+  if (count >= 10) return '위험'
+  if (count >= 5)  return '주의'
+  return '보통'
 }
 
 const filteredVideos = computed(() => {
