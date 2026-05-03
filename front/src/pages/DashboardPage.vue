@@ -1,35 +1,6 @@
 <template>
   <main class="min-h-screen bg-[#F6FAFD] px-8 py-7">
     <div class="origin-top-left scale-[0.8] w-[125%]">
-      <!-- 상단 얇은 상태 바 -->
-      <section
-        class="mb-5 rounded-3xl bg-white border border-sky-100 shadow-sm px-6 py-4">
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
-          <div
-            v-for="item in statusItems"
-            :key="item.label"
-            class="relative pl-4">
-            <div
-              class="absolute left-0 top-0 bottom-0 w-1 rounded-full"
-              :class="item.barColor"></div>
-            <p class="text-xs font-semibold" :class="item.textColor">
-              {{ item.label }}
-            </p>
-            <div class="mt-1 flex items-end gap-1">
-              <p class="text-2xl font-extrabold text-[#08243D]">
-                {{ item.value }}
-              </p>
-              <p class="mb-1 text-xs text-slate-400">
-                {{ item.unit }}
-              </p>
-            </div>
-            <p class="mt-1 text-xs text-slate-400">
-              {{ item.description }}
-            </p>
-          </div>
-        </div>
-      </section>
-
       <!-- 메인: 지도 중심 -->
       <section class="grid grid-cols-[1fr_360px] gap-5">
         <!-- 지도 영역 -->
@@ -77,18 +48,6 @@
           <div
             class="absolute left-6 right-6 top-6 z-20 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div
-              class="flex items-center gap-3 rounded-2xl bg-white/80 backdrop-blur-md border border-white/80 shadow-sm px-4 py-3">
-              <div>
-                <h2 class="text-base font-extrabold text-[#08243D]">
-                  유역 위험도 지도
-                </h2>
-                <p class="text-xs text-slate-500">
-                  마커 색상은 위험도, 크기는 검출 빈도를 의미합니다.
-                </p>
-              </div>
-            </div>
-
-            <div
               class="flex flex-wrap items-center gap-2 rounded-2xl bg-white/80 backdrop-blur-md border border-white/80 shadow-sm px-4 py-3">
               <button
                 v-for="filter in riskFilters"
@@ -102,27 +61,6 @@
                 @click="selectedFilter = filter">
                 {{ filter }}
               </button>
-            </div>
-          </div>
-
-          <!-- 범례 -->
-          <div
-            class="absolute bottom-6 left-6 z-20 rounded-2xl bg-white/80 backdrop-blur-md border border-white/80 shadow-sm px-4 py-3">
-            <p class="mb-2 text-xs font-bold text-slate-500">위험도</p>
-            <div
-              class="flex items-center gap-4 text-xs font-semibold text-slate-600">
-              <span class="flex items-center gap-1.5">
-                <span class="h-3 w-3 rounded-full bg-green-400"></span>
-                정상
-              </span>
-              <span class="flex items-center gap-1.5">
-                <span class="h-3 w-3 rounded-full bg-yellow-400"></span>
-                주의
-              </span>
-              <span class="flex items-center gap-1.5">
-                <span class="h-3 w-3 rounded-full bg-red-400"></span>
-                위험
-              </span>
             </div>
           </div>
 
@@ -215,7 +153,7 @@
 
         <!-- 오른쪽 이벤트 패널 -->
         <aside
-          class="rounded-[32px] bg-[#08243D] text-white p-6 shadow-sm min-h-[610px]">
+          class="rounded-[32px] bg-[#F3FAFE] text-[#08243D] p-6 shadow-sm min-h-[610px]">
           <div class="flex items-start justify-between">
             <div>
               <h2 class="mt-2 text-xl font-extrabold">최근 분석 이벤트</h2>
@@ -223,52 +161,69 @@
 
             <RouterLink
               :to="{ name: 'history' }"
-              class="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-sky-100 hover:bg-white/20 transition">
+              class="mt-2 bg-white text-xs font-bold text-[#334E68] hover:text-[#1F3A4D] transition">
               전체 보기
             </RouterLink>
           </div>
 
-          <div class="mt-6 flex flex-col gap-4">
-            <article
-              v-for="event in recentEvents"
-              :key="event.id"
-              class="relative rounded-3xl bg-white/8 border border-white/10 p-4">
-              <div class="flex items-start gap-3">
-                <div
-                  class="mt-1 h-3 w-3 rounded-full"
-                  :class="getEventDot(event.risk)"></div>
+          <!-- 최근 분석 이벤트 타임라인 -->
+          <div class="mt-6">
+            <div class="relative">
+              <div
+                v-for="(event, index) in recentEvents"
+                :key="event.id"
+                class="relative grid grid-cols-[48px_14px_1fr] gap-3">
+                <!-- 시간 -->
+                <div class="pt-0.5 text-right">
+                  <p class="text-[11px] font-bold leading-tight text-slate-500">
+                    {{ event.date }}
+                  </p>
+                  <p class="mt-0.5 text-xs font-extrabold text-[#08243D]">
+                    {{ event.time }}
+                  </p>
+                </div>
 
-                <div class="flex-1">
-                  <div class="flex items-center justify-between gap-2">
-                    <p class="text-sm font-extrabold">
-                      {{ event.title }}
-                    </p>
+                <!-- 선 + 점 -->
+                <div class="relative flex justify-center">
+                  <div
+                    v-if="index !== recentEvents.length - 1"
+                    class="absolute top-4 -bottom-6 w-px bg-sky-200"></div>
+
+                  <span
+                    class="relative z-10 mt-1 h-2.5 w-2.5 rounded-full ring-4 ring-[#F3FAFE]"
+                    :class="getEventDot(event.risk)"></span>
+                </div>
+
+                <!-- 내용 -->
+                <div class="pb-6">
+                  <div class="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 class="text-sm font-extrabold text-[#08243D]">
+                        {{ event.riverName }}
+                      </h3>
+
+                      <p
+                        class="mt-1.5 text-sm leading-relaxed text-slate-600"
+                        v-html="event.message"></p>
+                    </div>
+
                     <span
-                      class="rounded-full px-2 py-1 text-[11px] font-bold"
-                      :class="getDarkRiskBadge(event.risk)">
+                      class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold"
+                      :class="getLightRiskBadge(event.risk)">
                       {{ event.risk }}
                     </span>
                   </div>
-
-                  <p class="mt-2 text-sm leading-relaxed text-slate-300">
-                    {{ event.description }}
-                  </p>
-
-                  <div
-                    class="mt-3 flex items-center justify-between text-xs text-slate-400">
-                    <span>{{ event.riverName }}</span>
-                    <span>{{ event.time }}</span>
-                  </div>
                 </div>
               </div>
-            </article>
+            </div>
           </div>
 
           <!-- TOP 3 얇은 리스트 -->
           <div class="mt-7 border-t border-white/10 pt-6">
             <div class="mb-4 flex items-center justify-between">
-              <h3 class="text-sm font-extrabold text-white">검출 빈도 TOP 3</h3>
-              <p class="text-xs text-slate-400">최근 7일</p>
+              <h3 class="text-lg font-extrabold text-[#08243D]">
+                검출 빈도 TOP 3
+              </h3>
             </div>
 
             <div class="space-y-3">
@@ -278,7 +233,7 @@
                 class="flex items-center justify-between rounded-2xl bg-white/8 px-4 py-3">
                 <div class="flex items-center gap-3">
                   <span
-                    class="flex h-7 w-7 items-center justify-center rounded-full bg-sky-300 text-xs font-extrabold text-[#08243D]">
+                    class="flex h-7 w-7 items-center justify-center rounded-full bg-sky-100 text-xs font-extrabold text-[#08243D]">
                     {{ index + 1 }}
                   </span>
                   <div>
@@ -292,14 +247,42 @@
                 </div>
 
                 <span
-                  class="rounded-full px-2 py-1 text-[11px] font-bold"
-                  :class="getDarkRiskBadge(river.risk)">
+                  class="rounded-full px-2.5 py-1 text-[11px] font-bold"
+                  :class="getLightRiskBadge(river.risk)">
                   {{ river.risk }}
                 </span>
               </div>
             </div>
           </div>
         </aside>
+      </section>
+      <!-- 상단 얇은 상태 바 -->
+      <section
+        class="mt-8 rounded-3xl bg-white border border-sky-100 shadow-sm px-6 py-4">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
+          <div
+            v-for="item in statusItems"
+            :key="item.label"
+            class="relative pl-4">
+            <div
+              class="absolute left-0 top-0 bottom-0 w-1 rounded-full"
+              :class="item.barColor"></div>
+            <p class="text-xs font-semibold" :class="item.textColor">
+              {{ item.label }}
+            </p>
+            <div class="mt-1 flex items-end gap-1">
+              <p class="text-2xl font-extrabold text-[#08243D]">
+                {{ item.value }}
+              </p>
+              <p class="mb-1 text-xs text-slate-400">
+                {{ item.unit }}
+              </p>
+            </div>
+            <p class="mt-1 text-xs text-slate-400">
+              {{ item.description }}
+            </p>
+          </div>
+        </div>
       </section>
     </div>
   </main>
@@ -309,10 +292,8 @@
 import { computed, ref } from "vue";
 import { RouterLink } from "vue-router";
 
-const lastUpdated = "2026-03-15 14:32";
-
 const selectedFilter = ref("전체");
-const riskFilters = ["전체", "정상", "주의", "위험"];
+const riskFilters = ["전체", "위험", "주의", "보통"];
 
 const rivers = ref([
   {
@@ -320,7 +301,7 @@ const rivers = ref([
     name: "낙동강 A-12",
     region: "대구 북구",
     gps: "35.954, 128.694",
-    lastDate: "2026-03-15",
+    lastDate: "2026-05-01",
     detectCount: 47,
     risk: "위험",
     status: "즉시 점검 필요",
@@ -332,7 +313,7 @@ const rivers = ref([
     name: "금호강 K-03",
     region: "대구 동구",
     gps: "35.882, 128.635",
-    lastDate: "2026-03-13",
+    lastDate: "2026-05-01",
     detectCount: 31,
     risk: "주의",
     status: "관찰 필요",
@@ -344,7 +325,7 @@ const rivers = ref([
     name: "신천 S-07",
     region: "대구 중구",
     gps: "35.870, 128.601",
-    lastDate: "2026-03-12",
+    lastDate: "2026-05-02",
     detectCount: 17,
     risk: "주의",
     status: "관찰 필요",
@@ -356,9 +337,9 @@ const rivers = ref([
     name: "달서천 D-05",
     region: "대구 달서구",
     gps: "35.846, 128.532",
-    lastDate: "2026-03-10",
+    lastDate: "2026-05-02",
     detectCount: 5,
-    risk: "정상",
+    risk: "보통",
     status: "안정",
     x: 74,
     y: 62,
@@ -368,9 +349,9 @@ const rivers = ref([
     name: "팔거천 P-02",
     region: "대구 북구",
     gps: "35.946, 128.570",
-    lastDate: "2026-03-08",
+    lastDate: "2026-05-02",
     detectCount: 12,
-    risk: "정상",
+    risk: "보통",
     status: "안정",
     x: 25,
     y: 32,
@@ -380,9 +361,9 @@ const rivers = ref([
     name: "동화천 H-04",
     region: "대구 동구",
     gps: "35.935, 128.651",
-    lastDate: "2026-03-07",
+    lastDate: "2026-05-02",
     detectCount: 0,
-    risk: "정상",
+    risk: "보통",
     status: "안정",
     x: 67,
     y: 28,
@@ -394,96 +375,92 @@ const selectedRiver = ref(rivers.value[0]);
 const recentEvents = ref([
   {
     id: 1,
-    title: "강준치 다수 탐지",
-    description: "낙동강 A-12 유역에서 강준치 12마리가 추가 탐지되었습니다.",
     riverName: "낙동강 A-12",
+    date: "26.05.03",
     time: "14:32",
+    message: "강준치 12마리 탐지<br>- 집중 모니터링 필요",
     risk: "위험",
   },
   {
     id: 2,
-    title: "영상 분석 완료",
-    description: "신천 S-07 업로드 영상의 분석이 완료되었습니다.",
     riverName: "신천 S-07",
+    date: "26.05.03",
     time: "13:10",
+    message: "강준치 6마리 탐지",
     risk: "주의",
   },
   {
     id: 3,
-    title: "주의 단계 유지",
-    description:
-      "금호강 K-03 유역의 최근 탐지 빈도가 주의 수준을 유지하고 있습니다.",
     riverName: "금호강 K-03",
+    date: "26.05.02",
     time: "11:48",
+    message: "강준치 4마리 탐지",
     risk: "주의",
   },
   {
     id: 4,
-    title: "정상 상태 확인",
-    description:
-      "달서천 D-05 유역은 최근 탐지 수가 낮아 정상 단계로 분류되었습니다.",
     riverName: "달서천 D-05",
+    date: "26.05.02",
     time: "09:24",
-    risk: "정상",
+    message: "강준치 탐지 없음",
+    risk: "보통",
   },
 ]);
 
 const filteredRivers = computed(() => {
-  if (selectedFilter.value === "전체") {
-    return rivers.value;
-  }
+  if (selectedFilter.value === "전체") return rivers.value;
 
   return rivers.value.filter((river) => river.risk === selectedFilter.value);
 });
 
-const totalRiverCount = computed(() => rivers.value.length);
+const statusItems = computed(() => {
+  const totalRiverCount = rivers.value.length;
+  const detectedRiverCount = rivers.value.filter(
+    (river) => river.detectCount > 0,
+  ).length;
+  const dangerRiverCount = rivers.value.filter(
+    (river) => river.risk === "위험",
+  ).length;
+  const recentDetectCount = rivers.value.reduce(
+    (sum, river) => sum + river.detectCount,
+    0,
+  );
 
-const detectedRiverCount = computed(() => {
-  return rivers.value.filter((river) => river.detectCount > 0).length;
+  return [
+    {
+      label: "전체 유역",
+      value: totalRiverCount,
+      unit: "곳",
+      description: "등록된 모니터링 유역",
+      barColor: "bg-sky-300",
+      textColor: "text-sky-500",
+    },
+    {
+      label: "검출 유역",
+      value: detectedRiverCount,
+      unit: "곳",
+      description: "강준치 탐지 이력 존재",
+      barColor: "bg-blue-400",
+      textColor: "text-blue-500",
+    },
+    {
+      label: "위험 유역",
+      value: dangerRiverCount,
+      unit: "곳",
+      description: "즉시 점검 필요",
+      barColor: "bg-red-400",
+      textColor: "text-red-500",
+    },
+    {
+      label: "최근 7일 탐지",
+      value: recentDetectCount,
+      unit: "마리",
+      description: "전주 대비 +18",
+      barColor: "bg-[#08243D]",
+      textColor: "text-slate-500",
+    },
+  ];
 });
-
-const dangerRiverCount = computed(() => {
-  return rivers.value.filter((river) => river.risk === "위험").length;
-});
-
-const recentDetectCount = computed(() => {
-  return rivers.value.reduce((sum, river) => sum + river.detectCount, 0);
-});
-
-const statusItems = computed(() => [
-  {
-    label: "전체 유역",
-    value: totalRiverCount.value,
-    unit: "곳",
-    description: "등록된 모니터링 유역",
-    barColor: "bg-sky-300",
-    textColor: "text-sky-500",
-  },
-  {
-    label: "검출 유역",
-    value: detectedRiverCount.value,
-    unit: "곳",
-    description: "강준치 탐지 이력 존재",
-    barColor: "bg-blue-400",
-    textColor: "text-blue-500",
-  },
-  {
-    label: "위험 유역",
-    value: dangerRiverCount.value,
-    unit: "곳",
-    description: "즉시 점검 필요",
-    barColor: "bg-red-400",
-    textColor: "text-red-500",
-  },
-  {
-    label: "최근 7일 탐지",
-    value: recentDetectCount.value,
-    unit: "마리",
-    description: "전주 대비 +18",
-    barColor: "bg-[#08243D]",
-    textColor: "text-slate-500",
-  },
-]);
 
 const topRivers = computed(() => {
   return [...rivers.value]
@@ -516,15 +493,17 @@ function getRiskBadge(risk) {
   return "bg-green-100 text-green-600";
 }
 
-function getDarkRiskBadge(risk) {
-  if (risk === "위험") return "bg-red-400/20 text-red-200";
-  if (risk === "주의") return "bg-yellow-400/20 text-yellow-200";
-  return "bg-green-400/20 text-green-200";
-}
-
 function getEventDot(risk) {
   if (risk === "위험") return "bg-red-400";
   if (risk === "주의") return "bg-yellow-300";
   return "bg-green-400";
+}
+
+function getLightRiskBadge(risk) {
+  if (risk === "위험") return "bg-red-50 text-red-500 border border-red-100";
+  if (risk === "주의") {
+    return "bg-amber-50 text-amber-600 border border-amber-100";
+  }
+  return "bg-emerald-50 text-emerald-600 border border-emerald-100";
 }
 </script>
