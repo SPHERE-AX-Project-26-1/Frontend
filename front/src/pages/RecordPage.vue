@@ -102,7 +102,7 @@
           <div class="relative bg-gray-100 h-36 flex items-center justify-center">
             <span class="text-3xl text-gray-300">▶</span>
             <span
-              v-if="getSeverity(video.ganjunchiCount) !== '정상'"
+              v-if="getSeverity(video.ganjunchiCount) !== '보통'"
               :class="getSeverity(video.ganjunchiCount) === '위험' ? 'bg-red-500' : 'bg-yellow-400'"
               class="absolute top-2 right-2 text-white text-xs font-bold px-2 py-0.5 rounded-full"
             >
@@ -193,7 +193,7 @@ const regions = computed(() => [...new Set(videos.value.map(v => v.region))])
 function getSeverity(count) {
   if (count >= 10) return '위험'
   if (count >= 5)  return '주의'
-  return '정상'
+  return '보통'
 }
 
 

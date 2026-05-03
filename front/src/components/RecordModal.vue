@@ -166,7 +166,7 @@ const compareCards = computed(() => [
 function getSeverity(count) {
   if (count >= 10) return '위험'
   if (count >= 5)  return '주의'
-  return '정상'
+  return '보통'
 }
 
 function severityBadgeClass(count) {
