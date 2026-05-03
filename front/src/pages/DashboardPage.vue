@@ -124,7 +124,7 @@
               </div>
 
               <div class="rounded-2xl bg-[#F4FAFE] p-3">
-                <p class="text-xs text-slate-400">검출 수</p>
+                <p class="text-xs text-slate-400">누적 검출 수</p>
                 <p class="mt-1 text-sm font-bold text-[#08243D]">
                   {{ selectedRiver.detectCount }}마리
                 </p>
@@ -140,11 +140,14 @@
 
             <div class="mt-5 flex gap-2">
               <button
-                class="flex-1 rounded-2xl bg-[#08243D] py-3 text-sm font-bold text-white hover:bg-[#103A5D] transition">
+                class="flex-1 rounded-2xl bg-[#08243D] py-3 text-sm font-bold text-white hover:bg-[#103A5D] transition"
+                @click.stop="openRecordModal(selectedRiver)">
                 상세 보기
               </button>
+
               <button
-                class="rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm font-bold text-sky-600 hover:bg-sky-50 transition">
+                class="rounded-2xl border border-sky-100 bg-white px-4 py-3 text-sm font-bold text-sky-600 hover:bg-sky-50 transition"
+                @click.stop="goRecordPage(selectedRiver)">
                 기록
               </button>
             </div>
@@ -153,14 +156,14 @@
 
         <!-- 오른쪽 이벤트 패널 -->
         <aside
-          class="rounded-[32px] bg-[#F3FAFE] text-[#08243D] p-6 shadow-sm min-h-[610px]">
+          class="rounded-[32px] bg-white text-[#08243D] p-6 shadow-sm min-h-[610px]">
           <div class="flex items-start justify-between">
             <div>
               <h2 class="mt-2 text-xl font-extrabold">최근 분석 이벤트</h2>
             </div>
 
             <RouterLink
-              :to="{ name: 'history' }"
+              to="/app/history"
               class="mt-2 bg-white text-xs font-bold text-[#334E68] hover:text-[#1F3A4D] transition">
               전체 보기
             </RouterLink>
@@ -256,9 +259,10 @@
           </div>
         </aside>
       </section>
-      <!-- 상단 얇은 상태 바 -->
+
+      <!-- 하단 상태 바 -->
       <section
-        class="mt-8 rounded-3xl bg-white border border-sky-100 shadow-sm px-6 py-4">
+        class="mt-8 rounded-3xl bg-[#F3FAFE] border border-sky-100 shadow-sm px-6 py-4">
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
           <div
             v-for="item in statusItems"
@@ -285,127 +289,86 @@
         </div>
       </section>
     </div>
+
+    <!-- 상세 분석 모달 -->
+    <RecordModal
+      v-if="showRecordModal && activeVideo"
+      :video="activeVideo"
+      @close="closeRecordModal" />
   </main>
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
-import { RouterLink } from "vue-router";
+import { computed, ref, onMounted } from "vue";
+import { RouterLink, useRouter } from "vue-router";
+import RecordModal from "@/components/RecordModal.vue";
+import { mockVideos } from "@/data/mockVideos";
+
+const router = useRouter();
 
 const selectedFilter = ref("전체");
 const riskFilters = ["전체", "위험", "주의", "보통"];
 
-const rivers = ref([
-  {
-    id: 1,
-    name: "낙동강 A-12",
-    region: "대구 북구",
-    gps: "35.954, 128.694",
-    lastDate: "2026-05-01",
-    detectCount: 47,
-    risk: "위험",
-    status: "즉시 점검 필요",
-    x: 34,
-    y: 55,
-  },
-  {
-    id: 2,
-    name: "금호강 K-03",
-    region: "대구 동구",
-    gps: "35.882, 128.635",
-    lastDate: "2026-05-01",
-    detectCount: 31,
-    risk: "주의",
-    status: "관찰 필요",
-    x: 58,
-    y: 43,
-  },
-  {
-    id: 3,
-    name: "신천 S-07",
-    region: "대구 중구",
-    gps: "35.870, 128.601",
-    lastDate: "2026-05-02",
-    detectCount: 17,
-    risk: "주의",
-    status: "관찰 필요",
-    x: 48,
-    y: 67,
-  },
-  {
-    id: 4,
-    name: "달서천 D-05",
-    region: "대구 달서구",
-    gps: "35.846, 128.532",
-    lastDate: "2026-05-02",
-    detectCount: 5,
-    risk: "보통",
-    status: "안정",
-    x: 74,
-    y: 62,
-  },
-  {
-    id: 5,
-    name: "팔거천 P-02",
-    region: "대구 북구",
-    gps: "35.946, 128.570",
-    lastDate: "2026-05-02",
-    detectCount: 12,
-    risk: "보통",
-    status: "안정",
-    x: 25,
-    y: 32,
-  },
-  {
-    id: 6,
-    name: "동화천 H-04",
-    region: "대구 동구",
-    gps: "35.935, 128.651",
-    lastDate: "2026-05-02",
-    detectCount: 0,
-    risk: "보통",
-    status: "안정",
-    x: 67,
-    y: 28,
-  },
-]);
+const showRecordModal = ref(false);
+const activeVideo = ref(null);
+const selectedRiver = ref(null);
 
-const selectedRiver = ref(rivers.value[0]);
+/*
+  mockVideos에 있는 region을 기준으로 유역 데이터를 자동 생성
+  같은 유역의 여러 영상은 하나의 마커로 묶임
+*/
+const riverPositions = {
+  "낙동강 A-12": { x: 34, y: 55 },
+  "금호강 K-03": { x: 58, y: 43 },
+  "신천 S-07": { x: 48, y: 67 },
+  "낙동강 B-01": { x: 72, y: 48 },
+};
 
-const recentEvents = ref([
-  {
-    id: 1,
-    riverName: "낙동강 A-12",
-    date: "26.05.03",
-    time: "14:32",
-    message: "강준치 12마리 탐지<br>- 집중 모니터링 필요",
-    risk: "위험",
-  },
-  {
-    id: 2,
-    riverName: "신천 S-07",
-    date: "26.05.03",
-    time: "13:10",
-    message: "강준치 6마리 탐지",
-    risk: "주의",
-  },
-  {
-    id: 3,
-    riverName: "금호강 K-03",
-    date: "26.05.02",
-    time: "11:48",
-    message: "강준치 4마리 탐지",
-    risk: "주의",
-  },
-  {
-    id: 4,
-    riverName: "달서천 D-05",
-    date: "26.05.02",
-    time: "09:24",
-    message: "강준치 탐지 없음",
-    risk: "보통",
-  },
-]);
+const rivers = computed(() => {
+  const riverMap = new Map();
+
+  mockVideos.forEach((video) => {
+    if (!riverMap.has(video.region)) {
+      riverMap.set(video.region, []);
+    }
+
+    riverMap.get(video.region).push(video);
+  });
+
+  return Array.from(riverMap.entries()).map(([riverName, videos], index) => {
+    const sortedVideos = [...videos].sort((a, b) =>
+      b.date.localeCompare(a.date),
+    );
+
+    const latestVideo = sortedVideos[0];
+
+    const totalDetectCount = videos.reduce(
+      (sum, video) => sum + video.ganjunchiCount,
+      0,
+    );
+
+    const risk = getRiskByCount(totalDetectCount);
+
+    const defaultPosition = getDefaultPosition(index);
+
+    return {
+      id: index + 1,
+      name: riverName,
+      region: latestVideo.location,
+      gps: latestVideo.gps,
+      lastDate: latestVideo.date,
+      detectCount: totalDetectCount,
+      risk,
+      status: getStatusByRisk(risk),
+      x: riverPositions[riverName]?.x ?? defaultPosition.x,
+      y: riverPositions[riverName]?.y ?? defaultPosition.y,
+    };
+  });
+});
+
+onMounted(() => {
+  selectedRiver.value = rivers.value[0] ?? null;
+});
 
 const filteredRivers = computed(() => {
   if (selectedFilter.value === "전체") return rivers.value;
@@ -413,16 +376,42 @@ const filteredRivers = computed(() => {
   return rivers.value.filter((river) => river.risk === selectedFilter.value);
 });
 
+const recentEvents = computed(() => {
+  return [...mockVideos]
+    .sort((a, b) => b.uploadTime.localeCompare(a.uploadTime))
+    .slice(0, 4)
+    .map((video) => {
+      const risk = getRiskByVideoCount(video.ganjunchiCount);
+
+      return {
+        id: video.id,
+        riverName: video.region,
+        date: formatShortDate(video.date),
+        time: getTime(video.uploadTime),
+        message:
+          video.ganjunchiCount > 0
+            ? `강준치 ${video.ganjunchiCount}마리 탐지${
+                risk === "위험" ? "<br>- 집중 모니터링 필요" : ""
+              }`
+            : "강준치 탐지 없음",
+        risk,
+      };
+    });
+});
+
 const statusItems = computed(() => {
   const totalRiverCount = rivers.value.length;
+
   const detectedRiverCount = rivers.value.filter(
     (river) => river.detectCount > 0,
   ).length;
+
   const dangerRiverCount = rivers.value.filter(
     (river) => river.risk === "위험",
   ).length;
-  const recentDetectCount = rivers.value.reduce(
-    (sum, river) => sum + river.detectCount,
+
+  const recentDetectCount = mockVideos.reduce(
+    (sum, video) => sum + video.ganjunchiCount,
     0,
   );
 
@@ -452,10 +441,10 @@ const statusItems = computed(() => {
       textColor: "text-red-500",
     },
     {
-      label: "최근 7일 탐지",
+      label: "누적 탐지",
       value: recentDetectCount,
       unit: "마리",
-      description: "전주 대비 +18",
+      description: "임시 데이터 기준",
       barColor: "bg-[#08243D]",
       textColor: "text-slate-500",
     },
@@ -467,6 +456,74 @@ const topRivers = computed(() => {
     .sort((a, b) => b.detectCount - a.detectCount)
     .slice(0, 3);
 });
+
+function openRecordModal(river) {
+  const latestVideo = mockVideos
+    .filter((video) => video.region === river.name)
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
+
+  if (!latestVideo) {
+    alert(`${river.name}의 분석 기록이 없습니다.`);
+    return;
+  }
+
+  activeVideo.value = latestVideo;
+  showRecordModal.value = true;
+}
+
+function closeRecordModal() {
+  showRecordModal.value = false;
+  activeVideo.value = null;
+}
+
+function goRecordPage(river) {
+  router.push({
+    path: "/app/history",
+    query: { region: river.name },
+  });
+}
+
+function getRiskByCount(count) {
+  if (count >= 40) return "위험";
+  if (count >= 10) return "주의";
+  return "보통";
+}
+
+function getRiskByVideoCount(count) {
+  if (count >= 10) return "위험";
+  if (count >= 5) return "주의";
+  return "보통";
+}
+
+function getStatusByRisk(risk) {
+  if (risk === "위험") return "즉시 점검 필요";
+  if (risk === "주의") return "관찰 필요";
+  return "안정";
+}
+
+function getDefaultPosition(index) {
+  const positions = [
+    { x: 34, y: 55 },
+    { x: 58, y: 43 },
+    { x: 48, y: 67 },
+    { x: 72, y: 48 },
+    { x: 25, y: 32 },
+    { x: 67, y: 28 },
+    { x: 78, y: 65 },
+    { x: 40, y: 38 },
+  ];
+
+  return positions[index % positions.length];
+}
+
+function formatShortDate(date) {
+  const [year, month, day] = date.split("-");
+  return `${year.slice(2)}.${month}.${day}`;
+}
+
+function getTime(uploadTime) {
+  return uploadTime.split(" ")[1] ?? "";
+}
 
 function getMarkerColor(risk) {
   if (risk === "위험") return "bg-red-400";
