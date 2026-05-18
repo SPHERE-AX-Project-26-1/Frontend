@@ -347,3 +347,22 @@ export const mockVideos = [
     uploader: "사용자1",
   },
 ];
+
+export const riverCoordinates = {
+  "낙동강 A-12": {
+    latitude: 35.91,
+    longitude: 128.584,
+  },
+  "금호강 K-03": {
+    latitude: 35.886,
+    longitude: 128.65,
+  },
+  "신천 S-07": {
+    latitude: 35.851,
+    longitude: 128.626,
+  },
+  "낙동강 B-01": {
+    latitude: 36.132,
+    longitude: 128.337,
+  },
+};
