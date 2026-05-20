@@ -47,6 +47,16 @@ watch(
   { deep: true },
 );
 
+watch(
+  () => props.selectedRiver,
+  () => {
+    if (map.value) {
+      drawMarkers();
+    }
+  },
+  { deep: true },
+);
+
 function createMap() {
   if (!mapContainer.value) return;
 
@@ -84,6 +94,8 @@ function drawMarkers() {
     const marker = new window.kakao.maps.Marker({
       position: markerPosition,
       map: map.value,
+      image: createMarkerImage(river),
+      zIndex: isSelectedRiver(river) ? 20 : 10,
     });
 
     window.kakao.maps.event.addListener(marker, "click", () => {
@@ -101,5 +113,57 @@ function clearMarkers() {
   });
 
   markers.value = [];
+}
+
+function createMarkerImage(river) {
+  const markerColor = getMarkerColor(river.risk);
+  const selected = isSelectedRiver(river);
+
+  const width = selected ? 42 : 36;
+  const height = selected ? 50 : 44;
+
+  const svg = `
+    <svg width="${width}" height="${height}" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M18 43C18 43 34 27.5 34 16.8C34 7.9 26.8 1 18 1C9.2 1 2 7.9 2 16.8C2 27.5 18 43 18 43Z"
+        fill="${markerColor}"
+        stroke="white"
+        stroke-width="${selected ? 3.5 : 3}"
+      />
+      <circle
+        cx="18"
+        cy="17"
+        r="6.5"
+        fill="white"
+        opacity="0.95"
+      />
+      <circle
+        cx="18"
+        cy="17"
+        r="3.2"
+        fill="${markerColor}"
+      />
+    </svg>
+  `;
+
+  const markerSrc = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+
+  const markerSize = new window.kakao.maps.Size(width, height);
+
+  const markerOption = {
+    offset: new window.kakao.maps.Point(width / 2, height),
+  };
+
+  return new window.kakao.maps.MarkerImage(markerSrc, markerSize, markerOption);
+}
+
+function isSelectedRiver(river) {
+  return props.selectedRiver?.id === river.id;
+}
+
+function getMarkerColor(risk) {
+  if (risk === "위험") return "#EF4444";
+  if (risk === "주의") return "#FACC15";
+  return "#22C55E";
 }
 </script>
