@@ -270,65 +270,24 @@
             </div>
           </div>
 
-          <!-- 지도 영역 -->
+          <!-- 카카오맵 지도 영역 -->
           <div
-            class="relative h-[190px] rounded-2xl bg-[#DFF0FA] overflow-hidden border border-sky-100 cursor-crosshair"
-            @click="handleMapClick">
-            <div
-              class="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(255,255,255,0.9),transparent_30%),radial-gradient(circle_at_80%_75%,rgba(125,211,252,0.45),transparent_35%)]"></div>
-
-            <svg
-              class="absolute inset-0 h-full w-full opacity-70"
-              viewBox="0 0 500 220"
-              preserveAspectRatio="none">
-              <path
-                d="M45 185 C 110 145, 135 118, 205 112 C 275 106, 285 70, 350 58 C 405 48, 430 30, 475 20"
-                fill="none"
-                stroke="#7DD3FC"
-                stroke-width="15"
-                stroke-linecap="round" />
-              <path
-                d="M50 185 C 112 148, 138 121, 207 116 C 277 110, 287 73, 352 62 C 407 52, 432 34, 475 24"
-                fill="none"
-                stroke="#FFFFFF"
-                stroke-width="5"
-                stroke-linecap="round"
-                opacity="0.75" />
-              <path
-                d="M125 60 C 155 82, 180 100, 205 112"
-                fill="none"
-                stroke="#BAE6FD"
-                stroke-width="10"
-                stroke-linecap="round" />
-              <path
-                d="M350 165 C 335 120, 338 90, 350 58"
-                fill="none"
-                stroke="#BAE6FD"
-                stroke-width="10"
-                stroke-linecap="round" />
-            </svg>
+            class="relative h-[210px] rounded-2xl overflow-hidden border border-sky-100 bg-[#DFF0FA]">
+            <KakaoMap
+              :rivers="detailMapRivers"
+              :selected-river="detailMapRiver"
+              :enable-position-select="true"
+              variant="compact"
+              :map-level="7"
+              @select-position="handleSelectPositionFromMap" />
 
             <div
-              v-if="form.mapX && form.mapY"
-              class="absolute -translate-x-1/2 -translate-y-1/2"
-              :style="{ left: form.mapX + '%', top: form.mapY + '%' }">
-              <span class="relative flex items-center justify-center">
-                <span
-                  class="absolute h-10 w-10 rounded-full opacity-25 animate-ping"
-                  :class="getMarkerColor(form.risk)"></span>
-                <span
-                  class="relative h-5 w-5 rounded-full border-4 border-white shadow-lg"
-                  :class="getMarkerColor(form.risk)"></span>
-              </span>
-            </div>
-
-            <div
-              class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-              <p class="text-sm font-extrabold text-[#08243D]">
+              class="absolute left-3 bottom-3 z-20 rounded-xl bg-white/90 backdrop-blur-md border border-white px-3 py-2 shadow-sm pointer-events-none">
+              <p class="text-xs font-extrabold text-[#08243D]">
                 지도 클릭으로 GPS 좌표 선택
               </p>
-              <p class="mt-1 text-xs text-slate-500">
-                또는 위도/경도를 직접 입력할 수 있습니다.
+              <p class="mt-0.5 text-[11px] text-slate-500">
+                선택한 위치가 위도/경도에 자동 반영됩니다.
               </p>
             </div>
           </div>
@@ -365,7 +324,8 @@
 
 <script setup>
 import { computed, onMounted, ref } from "vue";
-import { mockVideos } from "@/data/mockVideos";
+import KakaoMap from "@/components/KakaoMap.vue";
+import { mockVideos, riverCoordinates } from "@/data/mockVideos";
 
 const riskOptions = ["보통", "주의", "위험"];
 
@@ -374,11 +334,9 @@ const RISK_STANDARD = {
   danger: 10,
 };
 
-const riverMapPosition = {
-  "낙동강 A-12": { mapX: 34, mapY: 55 },
-  "금호강 K-03": { mapX: 58, mapY: 43 },
-  "신천 S-07": { mapX: 48, mapY: 67 },
-  "낙동강 B-01": { mapX: 72, mapY: 48 },
+const DEFAULT_POSITION = {
+  latitude: 35.91,
+  longitude: 128.584,
 };
 
 const rivers = ref(createRiversFromMockVideos(mockVideos));
@@ -401,8 +359,6 @@ const emptyForm = {
   cautionThreshold: RISK_STANDARD.caution,
   dangerThreshold: RISK_STANDARD.danger,
   createdAt: "",
-  mapX: 50,
-  mapY: 50,
   analysisCount: 0,
   totalGanjunchiCount: 0,
   latestGanjunchiCount: 0,
@@ -447,21 +403,45 @@ const filteredRivers = computed(() => {
   return result;
 });
 
+const detailMapRiver = computed(() => {
+  const latitude = Number(form.value.latitude);
+  const longitude = Number(form.value.longitude);
+
+  if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+    return null;
+  }
+
+  return {
+    id: form.value.id ?? "new-river",
+    name: form.value.name || "선택 위치",
+    region: form.value.region || "위치 미지정",
+    latitude,
+    longitude,
+    risk: form.value.risk,
+  };
+});
+
+const detailMapRivers = computed(() => {
+  return detailMapRiver.value ? [detailMapRiver.value] : [];
+});
+
 function createRiversFromMockVideos(videos) {
   const grouped = videos.reduce((acc, video) => {
     const key = video.region;
 
     if (!acc[key]) {
-      const [latitude = "-", longitude = "-"] = video.gps
+      const [gpsLatitude = "-", gpsLongitude = "-"] = video.gps
         .split(",")
         .map((item) => item.trim());
+
+      const coordinate = riverCoordinates?.[key];
 
       acc[key] = {
         id: key,
         name: video.region,
         region: video.location,
-        latitude,
-        longitude,
+        latitude: coordinate?.latitude ?? gpsLatitude,
+        longitude: coordinate?.longitude ?? gpsLongitude,
         videos: [],
       };
     }
@@ -484,11 +464,6 @@ function createRiversFromMockVideos(videos) {
 
     const latestGanjunchiCount = latestVideo?.ganjunchiCount ?? 0;
 
-    const position = riverMapPosition[river.name] ?? {
-      mapX: 35 + index * 12,
-      mapY: 45 + index * 7,
-    };
-
     return {
       id: index + 1,
       name: river.name,
@@ -500,8 +475,6 @@ function createRiversFromMockVideos(videos) {
       cautionThreshold: RISK_STANDARD.caution,
       dangerThreshold: RISK_STANDARD.danger,
       createdAt: latestVideo?.uploadDate ?? latestVideo?.date ?? "-",
-      mapX: position.mapX,
-      mapY: position.mapY,
       analysisCount: river.videos.length,
       totalGanjunchiCount,
       latestGanjunchiCount,
@@ -524,11 +497,14 @@ function selectRiver(river) {
 function openCreateForm() {
   selectedRiver.value = null;
   isCreateMode.value = true;
+
   form.value = {
     ...emptyForm,
     id: Date.now(),
     createdAt: getToday(),
     lastAnalyzedAt: "-",
+    latitude: DEFAULT_POSITION.latitude.toFixed(6),
+    longitude: DEFAULT_POSITION.longitude.toFixed(6),
   };
 }
 
@@ -598,20 +574,9 @@ function deleteRiver() {
   }
 }
 
-function handleMapClick(event) {
-  const rect = event.currentTarget.getBoundingClientRect();
-
-  const x = ((event.clientX - rect.left) / rect.width) * 100;
-  const y = ((event.clientY - rect.top) / rect.height) * 100;
-
-  form.value.mapX = Number(x.toFixed(1));
-  form.value.mapY = Number(y.toFixed(1));
-
-  const latitude = 36.2 - y * 0.006;
-  const longitude = 128.25 + x * 0.006;
-
-  form.value.latitude = latitude.toFixed(3);
-  form.value.longitude = longitude.toFixed(3);
+function handleSelectPositionFromMap(position) {
+  form.value.latitude = position.latitude.toFixed(6);
+  form.value.longitude = position.longitude.toFixed(6);
 }
 
 function handleBulkUpload(event) {
@@ -650,15 +615,13 @@ function handleBulkUpload(event) {
           id: Date.now() + index,
           name,
           region,
-          latitude: latitude || "-",
-          longitude: longitude || "-",
+          latitude: latitude || DEFAULT_POSITION.latitude.toFixed(6),
+          longitude: longitude || DEFAULT_POSITION.longitude.toFixed(6),
           risk: riskOptions.includes(risk) ? risk : "보통",
           lastAnalyzedAt: "-",
           cautionThreshold: RISK_STANDARD.caution,
           dangerThreshold: RISK_STANDARD.danger,
           createdAt: getToday(),
-          mapX: 40 + index * 6,
-          mapY: 45 + index * 4,
           analysisCount: 0,
           totalGanjunchiCount: 0,
           latestGanjunchiCount: 0,
@@ -680,7 +643,12 @@ function handleBulkUpload(event) {
 }
 
 function getToday() {
-  return new Date().toISOString().slice(0, 10);
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const date = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${date}`;
 }
 
 function getRiskBadge(risk) {
@@ -689,11 +657,5 @@ function getRiskBadge(risk) {
     return "bg-amber-50 text-amber-600 border border-amber-100";
   }
   return "bg-emerald-50 text-emerald-600 border border-emerald-100";
-}
-
-function getMarkerColor(risk) {
-  if (risk === "위험") return "bg-red-400";
-  if (risk === "주의") return "bg-yellow-400";
-  return "bg-green-400";
 }
 </script>
