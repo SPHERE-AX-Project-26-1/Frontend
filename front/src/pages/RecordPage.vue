@@ -5,6 +5,7 @@
       <div>
         <h1 class="text-2xl font-bold text-[#1a1a2e]">이전 기록 조회</h1>
       </div>
+
       <button
         :class="
           isDeleteMode
@@ -71,24 +72,26 @@
       </div>
 
       <!-- 총 건수 -->
-      <span class="text-sm text-gray-500 whitespace-nowrap"
-        >총 {{ filteredVideos.length }}건</span
-      >
+      <span class="text-sm text-gray-500 whitespace-nowrap">
+        총 {{ filteredVideos.length }}건
+      </span>
     </div>
 
     <!-- 삭제 모드 안내 바 -->
     <div
       v-if="isDeleteMode"
       class="flex items-center justify-between bg-red-50 border border-red-200 rounded-md px-5 py-3 mb-5">
-      <span class="text-sm text-red-600 font-medium"
-        >{{ selectedIds.length }}개 선택됨</span
-      >
+      <span class="text-sm text-red-600 font-medium">
+        {{ selectedIds.length }}개 선택됨
+      </span>
+
       <div class="flex gap-2">
         <button
           class="px-4 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 transition"
           @click="toggleDeleteMode">
           취소
         </button>
+
         <button
           :disabled="selectedIds.length === 0"
           class="px-4 py-2 text-sm text-white bg-red-500 rounded-md cursor-pointer hover:bg-red-600 transition disabled:opacity-40 disabled:cursor-not-allowed"
@@ -107,7 +110,7 @@
           selectedIds.includes(video.id) ? 'ring-2 ring-red-400' : '',
           isDeleteMode
             ? 'cursor-pointer'
-            : 'cursor-pointer hover:-translate-y-0.5 ',
+            : 'cursor-pointer hover:-translate-y-0.5',
         ]"
         class="bg-white rounded-xl overflow-hidden border border-gray-200 transition"
         @click="handleCardClick(video)">
@@ -116,33 +119,40 @@
           <div class="text-xs text-gray-400 mb-0.5">
             업로드 {{ video.uploadDate }}
           </div>
+
           <div class="text-base text-gray-600 font-bold truncate">
             {{ video.filename }}
           </div>
+
           <div class="text-xs text-gray-400 mt-1">
             {{ video.date }} · {{ video.region }}
           </div>
         </div>
 
-          <!-- 썸네일 -->
-          <div class="relative bg-gray-100 h-36 flex items-center justify-center">
-            <span class="text-3xl text-gray-300">▶</span>
-            <span
-              v-if="getSeverity(video.ganjunchiCount) !== '보통'"
-              :class="getSeverity(video.ganjunchiCount) === '위험' ? 'bg-red-500' : 'bg-yellow-400'"
-              class="absolute top-2 right-2 text-white text-xs font-bold px-2 py-0.5 rounded-full"
-            >
-              ⚠ {{ getSeverity(video.ganjunchiCount) }}
-            </span>
-            <div
-              :class="
-                selectedIds.includes(video.id)
-                  ? 'bg-red-500 border-red-500 text-white'
-                  : 'bg-white border-gray-300'
-              "
-              class="w-6 h-6 border-2 rounded flex items-center justify-center font-bold text-sm">
-              <span v-if="selectedIds.includes(video.id)">✓</span>
-            </div>
+        <!-- 썸네일 -->
+        <div class="relative bg-gray-100 h-36 flex items-center justify-center">
+          <span class="text-3xl text-gray-300">▶</span>
+
+          <span
+            v-if="getSeverity(video.ganjunchiCount) !== '보통'"
+            :class="
+              getSeverity(video.ganjunchiCount) === '위험'
+                ? 'bg-red-500'
+                : 'bg-yellow-400'
+            "
+            class="absolute top-2 right-2 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+            ⚠ {{ getSeverity(video.ganjunchiCount) }}
+          </span>
+
+          <div
+            v-if="isDeleteMode"
+            :class="
+              selectedIds.includes(video.id)
+                ? 'bg-red-500 border-red-500 text-white'
+                : 'bg-white border-gray-300'
+            "
+            class="absolute top-2 left-2 w-6 h-6 border-2 rounded flex items-center justify-center font-bold text-sm">
+            <span v-if="selectedIds.includes(video.id)">✓</span>
           </div>
         </div>
 
@@ -150,6 +160,7 @@
         <div class="px-3.5 py-2.5 flex items-center gap-2 text-sm">
           <div class="flex items-center gap-2 bg-blue-50 px-2 py-1 rounded-md">
             <span class="text-gray-500">강준치</span>
+
             <span
               :class="
                 getSeverity(video.ganjunchiCount) === '위험'
@@ -158,15 +169,16 @@
                     ? 'text-yellow-500'
                     : 'text-gray-700'
               "
-              class="font-bold"
-              >{{ video.ganjunchiCount }}마리</span
-            >
+              class="font-bold">
+              {{ video.ganjunchiCount }}마리
+            </span>
           </div>
+
           <span class="text-gray-300">/</span>
           <span class="text-gray-500">총 개체</span>
-          <span class="font-medium text-gray-700"
-            >{{ video.totalCount }}마리</span
-          >
+          <span class="font-medium text-gray-700">
+            {{ video.totalCount }}마리
+          </span>
         </div>
       </div>
     </div>
@@ -178,8 +190,9 @@
       검색 결과가 없습니다.
     </div>
 
-    <!-- 무한스크롤 감지 (기본 상태에서만) -->
+    <!-- 무한스크롤 감지 -->
     <div ref="sentinel" class="h-px"></div>
+
     <div
       v-if="isLoading"
       class="flex items-center justify-center gap-2 py-8 text-sm text-gray-400">
@@ -220,25 +233,32 @@ const activeVideo = ref(null);
 const regions = computed(() => [...new Set(videos.value.map((v) => v.region))]);
 
 function getSeverity(count) {
-  if (count >= 10) return '위험'
-  if (count >= 5)  return '주의'
-  return '보통'
+  if (count >= 10) return "위험";
+  if (count >= 5) return "주의";
+  return "보통";
 }
 
 const filteredVideos = computed(() => {
   let result = [...videos.value];
-  if (searchQuery.value)
-    result = result.filter((v) =>
-      v.filename?.toLowerCase().includes(searchQuery.value.toLowerCase()),
+
+  if (searchQuery.value) {
+    result = result.filter((video) =>
+      video.filename?.toLowerCase().includes(searchQuery.value.toLowerCase()),
     );
-  if (filterRegion.value)
-    result = result.filter((v) => v.region === filterRegion.value);
-  if (sortBy.value === "date_desc")
+  }
+
+  if (filterRegion.value) {
+    result = result.filter((video) => video.region === filterRegion.value);
+  }
+
+  if (sortBy.value === "date_desc") {
     result.sort((a, b) => b.date.localeCompare(a.date));
-  else if (sortBy.value === "date_asc")
+  } else if (sortBy.value === "date_asc") {
     result.sort((a, b) => a.date.localeCompare(b.date));
-  else if (sortBy.value === "region")
+  } else if (sortBy.value === "region") {
     result.sort((a, b) => a.region.localeCompare(b.region));
+  }
+
   return result;
 });
 
@@ -261,8 +281,6 @@ watch([searchQuery, filterRegion, sortBy], () => {
 });
 
 // 화면에 보여줄 영상 목록
-// - 필터/정렬 적용 시: 전체 표시
-// - 기본 상태: 무한스크롤 (8개씩)
 const displayedVideos = computed(() =>
   isFiltered.value
     ? filteredVideos.value
@@ -277,7 +295,9 @@ const hasMore = computed(
 
 function loadMore() {
   if (isLoading.value || !hasMore.value) return;
+
   isLoading.value = true;
+
   setTimeout(() => {
     currentPage.value++;
     isLoading.value = false;
@@ -286,13 +306,19 @@ function loadMore() {
 
 onMounted(async () => {
   await nextTick();
+
   observer = new IntersectionObserver(
     (entries) => {
-      if (entries[0]?.isIntersecting) loadMore();
+      if (entries[0]?.isIntersecting) {
+        loadMore();
+      }
     },
     { threshold: 0.1 },
   );
-  if (sentinel.value) observer.observe(sentinel.value);
+
+  if (sentinel.value) {
+    observer.observe(sentinel.value);
+  }
 });
 
 onBeforeUnmount(() => {
@@ -300,32 +326,50 @@ onBeforeUnmount(() => {
 });
 
 function handleCardClick(video) {
-  if (isDeleteMode.value) toggleSelect(video.id);
-  else openModal(video);
+  if (isDeleteMode.value) {
+    toggleSelect(video.id);
+    return;
+  }
+
+  openModal(video);
 }
 
 function openModal(video) {
   activeVideo.value = video;
   showModal.value = true;
 }
+
 function closeModal() {
   showModal.value = false;
   activeVideo.value = null;
 }
+
 function toggleDeleteMode() {
   isDeleteMode.value = !isDeleteMode.value;
   selectedIds.value = [];
 }
+
 function toggleSelect(id) {
-  const idx = selectedIds.value.indexOf(id);
-  if (idx === -1) selectedIds.value.push(id);
-  else selectedIds.value.splice(idx, 1);
+  const index = selectedIds.value.indexOf(id);
+
+  if (index === -1) {
+    selectedIds.value.push(id);
+  } else {
+    selectedIds.value.splice(index, 1);
+  }
 }
+
 function deleteSelected() {
   if (!selectedIds.value.length) return;
-  if (!confirm(`${selectedIds.value.length}개의 영상을 삭제하시겠습니까?`))
+
+  if (!confirm(`${selectedIds.value.length}개의 영상을 삭제하시겠습니까?`)) {
     return;
-  videos.value = videos.value.filter((v) => !selectedIds.value.includes(v.id));
+  }
+
+  videos.value = videos.value.filter(
+    (video) => !selectedIds.value.includes(video.id),
+  );
+
   toggleDeleteMode();
 }
 </script>

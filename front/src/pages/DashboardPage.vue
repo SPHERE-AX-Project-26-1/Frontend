@@ -6,43 +6,11 @@
         <!-- 지도 영역 -->
         <div
           class="relative min-h-[610px] rounded-[32px] overflow-hidden bg-[#DFF0FA] border border-sky-100 shadow-sm">
-          <!-- 임시 지도 배경 -->
-          <div class="absolute inset-0">
-            <div
-              class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.9),transparent_28%),radial-gradient(circle_at_80%_70%,rgba(125,211,252,0.45),transparent_35%)]"></div>
-
-            <!-- 강/유역 느낌 선 -->
-            <svg
-              class="absolute inset-0 h-full w-full opacity-60"
-              viewBox="0 0 1000 620"
-              preserveAspectRatio="none">
-              <path
-                d="M120 520 C 220 430, 260 360, 390 340 C 520 320, 510 210, 650 190 C 760 175, 810 110, 930 80"
-                fill="none"
-                stroke="#7DD3FC"
-                stroke-width="22"
-                stroke-linecap="round" />
-              <path
-                d="M130 520 C 230 435, 270 365, 395 345 C 520 325, 515 215, 650 195 C 760 180, 810 115, 930 85"
-                fill="none"
-                stroke="#FFFFFF"
-                stroke-width="8"
-                stroke-linecap="round"
-                opacity="0.7" />
-              <path
-                d="M250 190 C 320 240, 345 300, 400 340"
-                fill="none"
-                stroke="#BAE6FD"
-                stroke-width="14"
-                stroke-linecap="round" />
-              <path
-                d="M690 430 C 650 350, 630 260, 650 195"
-                fill="none"
-                stroke="#BAE6FD"
-                stroke-width="14"
-                stroke-linecap="round" />
-            </svg>
-          </div>
+          <!-- 카카오맵 -->
+          <KakaoMap
+            :rivers="filteredRivers"
+            :selected-river="selectedRiver"
+            @select-river="selectedRiver = $event" />
 
           <!-- 지도 상단 컨트롤 -->
           <div
@@ -63,29 +31,6 @@
               </button>
             </div>
           </div>
-
-          <!-- 마커 -->
-          <button
-            v-for="river in filteredRivers"
-            :key="river.id"
-            class="absolute z-10 -translate-x-1/2 -translate-y-1/2"
-            :style="{ left: river.x + '%', top: river.y + '%' }"
-            @click="selectedRiver = river">
-            <span class="relative flex items-center justify-center">
-              <span
-                class="absolute rounded-full animate-ping opacity-25"
-                :class="[
-                  getMarkerColor(river.risk),
-                  getMarkerPingSize(river.detectCount),
-                ]"></span>
-              <span
-                class="relative rounded-full border-[5px] border-white shadow-xl transition hover:scale-125"
-                :class="[
-                  getMarkerColor(river.risk),
-                  getMarkerSize(river.detectCount),
-                ]"></span>
-            </span>
-          </button>
 
           <!-- 선택 유역 플로팅 상세 패널 -->
           <aside
@@ -110,7 +55,7 @@
 
             <div class="mt-5 grid grid-cols-2 gap-3">
               <div class="rounded-2xl bg-[#F4FAFE] p-3">
-                <p class="text-xs text-slate-400">GPS</p>
+                <p class="text-xs text-slate-400">위치 정보</p>
                 <p class="mt-1 text-sm font-bold text-slate-700">
                   {{ selectedRiver.gps }}
                 </p>
@@ -142,7 +87,7 @@
               <button
                 class="flex-1 rounded-2xl bg-[#08243D] py-3 text-sm font-bold text-white hover:bg-[#103A5D] transition"
                 @click.stop="openRecordModal(selectedRiver)">
-                상세 보기
+                자세히 보기
               </button>
 
               <button
@@ -160,6 +105,9 @@
           <div class="flex items-start justify-between">
             <div>
               <h2 class="mt-2 text-xl font-extrabold">최근 분석 이벤트</h2>
+              <p class="mt-1 text-xs text-slate-400">
+                최근 업로드 영상 기준 4건
+              </p>
             </div>
 
             <RouterLink
@@ -221,8 +169,8 @@
             </div>
           </div>
 
-          <!-- TOP 3 얇은 리스트 -->
-          <div class="mt-7 border-t border-white/10 pt-6">
+          <!-- TOP 3 리스트 -->
+          <div class="mt-7 border-t border-sky-100 pt-6">
             <div class="mb-4 flex items-center justify-between">
               <h3 class="text-lg font-extrabold text-[#08243D]">
                 검출 빈도 TOP 3
@@ -233,12 +181,13 @@
               <div
                 v-for="(river, index) in topRivers"
                 :key="river.id"
-                class="flex items-center justify-between rounded-2xl bg-white/8 px-4 py-3">
+                class="flex items-center justify-between rounded-2xl border border-sky-100 bg-[#F8FCFF] px-4 py-3">
                 <div class="flex items-center gap-3">
                   <span
                     class="flex h-7 w-7 items-center justify-center rounded-full bg-sky-100 text-xs font-extrabold text-[#08243D]">
                     {{ index + 1 }}
                   </span>
+
                   <div>
                     <p class="text-sm font-bold">
                       {{ river.name }}
@@ -271,9 +220,11 @@
             <div
               class="absolute left-0 top-0 bottom-0 w-1 rounded-full"
               :class="item.barColor"></div>
+
             <p class="text-xs font-semibold" :class="item.textColor">
               {{ item.label }}
             </p>
+
             <div class="mt-1 flex items-end gap-1">
               <p class="text-2xl font-extrabold text-[#08243D]">
                 {{ item.value }}
@@ -282,6 +233,7 @@
                 {{ item.unit }}
               </p>
             </div>
+
             <p class="mt-1 text-xs text-slate-400">
               {{ item.description }}
             </p>
@@ -302,7 +254,8 @@
 import { computed, ref, onMounted } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import RecordModal from "@/components/RecordModal.vue";
-import { mockVideos } from "@/data/mockVideos";
+import KakaoMap from "@/components/KakaoMap.vue";
+import { mockVideos, riverCoordinates } from "@/data/mockVideos";
 
 const router = useRouter();
 
@@ -317,13 +270,6 @@ const selectedRiver = ref(null);
   mockVideos에 있는 region을 기준으로 유역 데이터를 자동 생성
   같은 유역의 여러 영상은 하나의 마커로 묶임
 */
-const riverPositions = {
-  "낙동강 A-12": { x: 34, y: 55 },
-  "금호강 K-03": { x: 58, y: 43 },
-  "신천 S-07": { x: 48, y: 67 },
-  "낙동강 B-01": { x: 72, y: 48 },
-};
-
 const rivers = computed(() => {
   const riverMap = new Map();
 
@@ -335,7 +281,7 @@ const rivers = computed(() => {
     riverMap.get(video.region).push(video);
   });
 
-  return Array.from(riverMap.entries()).map(([riverName, videos], index) => {
+  return Array.from(riverMap.entries()).map(([riverName, videos]) => {
     const sortedVideos = [...videos].sort((a, b) =>
       b.date.localeCompare(a.date),
     );
@@ -348,11 +294,10 @@ const rivers = computed(() => {
     );
 
     const risk = getRiskByCount(totalDetectCount);
-
-    const defaultPosition = getDefaultPosition(index);
+    const coordinate = riverCoordinates[riverName];
 
     return {
-      id: index + 1,
+      id: riverName,
       name: riverName,
       region: latestVideo.location,
       gps: latestVideo.gps,
@@ -360,8 +305,10 @@ const rivers = computed(() => {
       detectCount: totalDetectCount,
       risk,
       status: getStatusByRisk(risk),
-      x: riverPositions[riverName]?.x ?? defaultPosition.x,
-      y: riverPositions[riverName]?.y ?? defaultPosition.y,
+
+      // 카카오맵 마커 표시용 좌표
+      latitude: coordinate?.latitude,
+      longitude: coordinate?.longitude,
     };
   });
 });
@@ -444,7 +391,7 @@ const statusItems = computed(() => {
       label: "누적 탐지",
       value: recentDetectCount,
       unit: "마리",
-      description: "임시 데이터 기준",
+      description: "등록 영상 누적 기준",
       barColor: "bg-[#08243D]",
       textColor: "text-slate-500",
     },
@@ -501,21 +448,6 @@ function getStatusByRisk(risk) {
   return "안정";
 }
 
-function getDefaultPosition(index) {
-  const positions = [
-    { x: 34, y: 55 },
-    { x: 58, y: 43 },
-    { x: 48, y: 67 },
-    { x: 72, y: 48 },
-    { x: 25, y: 32 },
-    { x: 67, y: 28 },
-    { x: 78, y: 65 },
-    { x: 40, y: 38 },
-  ];
-
-  return positions[index % positions.length];
-}
-
 function formatShortDate(date) {
   const [year, month, day] = date.split("-");
   return `${year.slice(2)}.${month}.${day}`;
@@ -523,25 +455,6 @@ function formatShortDate(date) {
 
 function getTime(uploadTime) {
   return uploadTime.split(" ")[1] ?? "";
-}
-
-function getMarkerColor(risk) {
-  if (risk === "위험") return "bg-red-400";
-  if (risk === "주의") return "bg-yellow-400";
-  return "bg-green-400";
-}
-
-function getMarkerSize(count) {
-  if (count >= 40) return "h-8 w-8";
-  if (count >= 20) return "h-7 w-7";
-  if (count >= 10) return "h-6 w-6";
-  return "h-5 w-5";
-}
-
-function getMarkerPingSize(count) {
-  if (count >= 40) return "h-14 w-14";
-  if (count >= 20) return "h-12 w-12";
-  return "h-10 w-10";
 }
 
 function getRiskBadge(risk) {
@@ -558,9 +471,11 @@ function getEventDot(risk) {
 
 function getLightRiskBadge(risk) {
   if (risk === "위험") return "bg-red-50 text-red-500 border border-red-100";
+
   if (risk === "주의") {
     return "bg-amber-50 text-amber-600 border border-amber-100";
   }
+
   return "bg-emerald-50 text-emerald-600 border border-emerald-100";
 }
 </script>

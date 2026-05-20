@@ -34,19 +34,16 @@
             <div class="relative">
               <svg width="160" height="160" viewBox="0 0 160 160">
                 <circle cx="80" cy="80" r="60" fill="none" stroke="#1e2d52" stroke-width="22"
-                  stroke-linecap="round"
-                  :stroke-dasharray="`${Math.max(0, getDonutDash(video.ganjunchiCount, video.totalCount) - 28)} ${CIRCUMFERENCE}`"
-                  :stroke-dashoffset="-14"
+                  :stroke-dasharray="`${Math.max(0, getDonutDash(video.ganjunchiCount, video.totalCount) - 4)} ${CIRCUMFERENCE}`"
+                  :stroke-dashoffset="-2"
                   transform="rotate(-90 80 80)"/>
-                <circle v-if="video.ganjunchiCount < video.totalCount"
+                <circle v-if="video.ganjunchiCount > 0 && video.ganjunchiCount < video.totalCount"
                   cx="80" cy="80" r="60" fill="none" stroke="#e0e4eb" stroke-width="22"
-                  stroke-linecap="round"
-                  :stroke-dasharray="`${Math.max(0, CIRCUMFERENCE - getDonutDash(video.ganjunchiCount, video.totalCount) - 28)} ${CIRCUMFERENCE}`"
-                  :stroke-dashoffset="-(getDonutDash(video.ganjunchiCount, video.totalCount) + 14)"
+                  :stroke-dasharray="`${Math.max(0, CIRCUMFERENCE - getDonutDash(video.ganjunchiCount, video.totalCount) - 4)} ${CIRCUMFERENCE}`"
+                  :stroke-dashoffset="-(getDonutDash(video.ganjunchiCount, video.totalCount) + 2)"
                   transform="rotate(-90 80 80)"/>
                 <circle v-if="video.ganjunchiCount === 0"
-                  cx="80" cy="80" r="60" fill="none" stroke="#e0e4eb" stroke-width="22"
-                  stroke-linecap="round"/>
+                  cx="80" cy="80" r="60" fill="none" stroke="#e0e4eb" stroke-width="22"/>
               </svg>
               <div class="absolute inset-0 flex flex-col items-center justify-center">
                 <span class="text-4xl font-bold text-gray-900">{{ video.ganjunchiCount }}</span>
