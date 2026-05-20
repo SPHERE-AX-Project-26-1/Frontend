@@ -55,7 +55,7 @@
 
             <div class="mt-5 grid grid-cols-2 gap-3">
               <div class="rounded-2xl bg-[#F4FAFE] p-3">
-                <p class="text-xs text-slate-400">GPS</p>
+                <p class="text-xs text-slate-400">위치 정보</p>
                 <p class="mt-1 text-sm font-bold text-slate-700">
                   {{ selectedRiver.gps }}
                 </p>
@@ -87,7 +87,7 @@
               <button
                 class="flex-1 rounded-2xl bg-[#08243D] py-3 text-sm font-bold text-white hover:bg-[#103A5D] transition"
                 @click.stop="openRecordModal(selectedRiver)">
-                상세 보기
+                자세히 보기
               </button>
 
               <button
@@ -105,6 +105,9 @@
           <div class="flex items-start justify-between">
             <div>
               <h2 class="mt-2 text-xl font-extrabold">최근 분석 이벤트</h2>
+              <p class="mt-1 text-xs text-slate-400">
+                최근 업로드 영상 기준 4건
+              </p>
             </div>
 
             <RouterLink
@@ -166,8 +169,8 @@
             </div>
           </div>
 
-          <!-- TOP 3 얇은 리스트 -->
-          <div class="mt-7 border-t border-white/10 pt-6">
+          <!-- TOP 3 리스트 -->
+          <div class="mt-7 border-t border-sky-100 pt-6">
             <div class="mb-4 flex items-center justify-between">
               <h3 class="text-lg font-extrabold text-[#08243D]">
                 검출 빈도 TOP 3
@@ -178,12 +181,13 @@
               <div
                 v-for="(river, index) in topRivers"
                 :key="river.id"
-                class="flex items-center justify-between rounded-2xl bg-white/8 px-4 py-3">
+                class="flex items-center justify-between rounded-2xl border border-sky-100 bg-[#F8FCFF] px-4 py-3">
                 <div class="flex items-center gap-3">
                   <span
                     class="flex h-7 w-7 items-center justify-center rounded-full bg-sky-100 text-xs font-extrabold text-[#08243D]">
                     {{ index + 1 }}
                   </span>
+
                   <div>
                     <p class="text-sm font-bold">
                       {{ river.name }}
@@ -216,9 +220,11 @@
             <div
               class="absolute left-0 top-0 bottom-0 w-1 rounded-full"
               :class="item.barColor"></div>
+
             <p class="text-xs font-semibold" :class="item.textColor">
               {{ item.label }}
             </p>
+
             <div class="mt-1 flex items-end gap-1">
               <p class="text-2xl font-extrabold text-[#08243D]">
                 {{ item.value }}
@@ -227,6 +233,7 @@
                 {{ item.unit }}
               </p>
             </div>
+
             <p class="mt-1 text-xs text-slate-400">
               {{ item.description }}
             </p>
@@ -274,7 +281,7 @@ const rivers = computed(() => {
     riverMap.get(video.region).push(video);
   });
 
-  return Array.from(riverMap.entries()).map(([riverName, videos], index) => {
+  return Array.from(riverMap.entries()).map(([riverName, videos]) => {
     const sortedVideos = [...videos].sort((a, b) =>
       b.date.localeCompare(a.date),
     );
@@ -290,7 +297,7 @@ const rivers = computed(() => {
     const coordinate = riverCoordinates[riverName];
 
     return {
-      id: index + 1,
+      id: riverName,
       name: riverName,
       region: latestVideo.location,
       gps: latestVideo.gps,
@@ -384,7 +391,7 @@ const statusItems = computed(() => {
       label: "누적 탐지",
       value: recentDetectCount,
       unit: "마리",
-      description: "임시 데이터 기준",
+      description: "등록 영상 누적 기준",
       barColor: "bg-[#08243D]",
       textColor: "text-slate-500",
     },
@@ -464,9 +471,11 @@ function getEventDot(risk) {
 
 function getLightRiskBadge(risk) {
   if (risk === "위험") return "bg-red-50 text-red-500 border border-red-100";
+
   if (risk === "주의") {
     return "bg-amber-50 text-amber-600 border border-amber-100";
   }
+
   return "bg-emerald-50 text-emerald-600 border border-emerald-100";
 }
 </script>
