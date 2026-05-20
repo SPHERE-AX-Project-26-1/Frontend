@@ -44,7 +44,7 @@
                   :stroke-dasharray="`${Math.max(0, CIRCUMFERENCE - getDonutDash(video.ganjunchiCount, video.totalCount) - 28)} ${CIRCUMFERENCE}`"
                   :stroke-dashoffset="-(getDonutDash(video.ganjunchiCount, video.totalCount) + 14)"
                   transform="rotate(-90 80 80)"/>
-                <circle v-if="video.ganjunchiCount === 0"
+                <circle v-if="video.totalCount === 0"
                   cx="80" cy="80" r="60" fill="none" stroke="#e0e4eb" stroke-width="22"
                   stroke-linecap="round"/>
               </svg>
@@ -166,7 +166,7 @@ const compareCards = computed(() => [
 function getSeverity(count) {
   if (count >= 10) return '위험'
   if (count >= 5)  return '주의'
-  return '정상'
+  return '보통'
 }
 
 function severityBadgeClass(count) {
