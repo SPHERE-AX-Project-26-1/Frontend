@@ -1,19 +1,15 @@
 <template>
-  <div class="relative h-full w-full">
-    <div
-      ref="mapContainer"
-      class="h-full min-h-[610px] w-full rounded-[32px]"></div>
+  <div :class="wrapperClass">
+    <div ref="mapContainer" :class="mapContainerClass"></div>
 
-    <div
-      v-if="!isMapLoaded"
-      class="absolute inset-0 flex items-center justify-center rounded-[32px] bg-[#DFF0FA] text-sm font-bold text-[#08243D]">
+    <div v-if="!isMapLoaded" :class="loadingClass">
       지도를 불러오는 중입니다...
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const props = defineProps({
   rivers: {
@@ -24,17 +20,63 @@ const props = defineProps({
     type: Object,
     default: null,
   },
+
+  enablePositionSelect: {
+    type: Boolean,
+    default: false,
+  },
+
+  variant: {
+    type: String,
+    default: "dashboard",
+  },
+
+  mapLevel: {
+    type: Number,
+    default: 8,
+  },
 });
 
-const emit = defineEmits(["select-river"]);
+const emit = defineEmits(["select-river", "select-position"]);
 
 const mapContainer = ref(null);
 const map = ref(null);
 const markers = ref([]);
 const isMapLoaded = ref(false);
 
+const DEFAULT_CENTER = {
+  latitude: 35.91,
+  longitude: 128.584,
+};
+
+const wrapperClass = computed(() => {
+  const roundedClass =
+    props.variant === "compact" ? "rounded-2xl" : "rounded-[32px]";
+
+  return `relative h-full w-full overflow-hidden ${roundedClass}`;
+});
+
+const mapContainerClass = computed(() => {
+  if (props.variant === "compact") {
+    return "h-full min-h-[210px] w-full rounded-2xl";
+  }
+
+  return "h-full min-h-[610px] w-full rounded-[32px]";
+});
+
+const loadingClass = computed(() => {
+  const roundedClass =
+    props.variant === "compact" ? "rounded-2xl" : "rounded-[32px]";
+
+  return `absolute inset-0 flex items-center justify-center ${roundedClass} bg-[#DFF0FA] text-sm font-bold text-[#08243D]`;
+});
+
 onMounted(() => {
   createMap();
+});
+
+onBeforeUnmount(() => {
+  clearMarkers();
 });
 
 watch(
@@ -52,6 +94,7 @@ watch(
   () => {
     if (map.value) {
       drawMarkers();
+      moveToSelectedRiver();
     }
   },
   { deep: true },
@@ -66,29 +109,80 @@ function createMap() {
   }
 
   window.kakao.maps.load(() => {
-    const center = new window.kakao.maps.LatLng(35.91, 128.584);
+    const centerPosition = getInitialCenter();
+
+    const center = new window.kakao.maps.LatLng(
+      centerPosition.latitude,
+      centerPosition.longitude,
+    );
 
     const options = {
       center,
-      level: 8,
+      level: props.mapLevel,
     };
 
     map.value = new window.kakao.maps.Map(mapContainer.value, options);
     isMapLoaded.value = true;
 
+    if (props.enablePositionSelect) {
+      window.kakao.maps.event.addListener(map.value, "click", (mouseEvent) => {
+        const latLng = mouseEvent.latLng;
+
+        emit("select-position", {
+          latitude: latLng.getLat(),
+          longitude: latLng.getLng(),
+        });
+      });
+    }
+
     drawMarkers();
+    moveToSelectedRiver();
   });
+}
+
+function getInitialCenter() {
+  const selectedPosition = getValidPosition(props.selectedRiver);
+
+  if (selectedPosition) {
+    return selectedPosition;
+  }
+
+  const firstRiver = props.rivers.find((river) => getValidPosition(river));
+  const firstPosition = getValidPosition(firstRiver);
+
+  if (firstPosition) {
+    return firstPosition;
+  }
+
+  return DEFAULT_CENTER;
+}
+
+function getValidPosition(river) {
+  if (!river) return null;
+
+  const latitude = Number(river.latitude);
+  const longitude = Number(river.longitude);
+
+  if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+    return null;
+  }
+
+  return {
+    latitude,
+    longitude,
+  };
 }
 
 function drawMarkers() {
   clearMarkers();
 
   props.rivers.forEach((river) => {
-    if (!river.latitude || !river.longitude) return;
+    const position = getValidPosition(river);
+    if (!position) return;
 
     const markerPosition = new window.kakao.maps.LatLng(
-      river.latitude,
-      river.longitude,
+      position.latitude,
+      position.longitude,
     );
 
     const marker = new window.kakao.maps.Marker({
@@ -113,6 +207,18 @@ function clearMarkers() {
   });
 
   markers.value = [];
+}
+
+function moveToSelectedRiver() {
+  const position = getValidPosition(props.selectedRiver);
+  if (!position || !map.value) return;
+
+  const selectedPosition = new window.kakao.maps.LatLng(
+    position.latitude,
+    position.longitude,
+  );
+
+  map.value.panTo(selectedPosition);
 }
 
 function createMarkerImage(river) {
