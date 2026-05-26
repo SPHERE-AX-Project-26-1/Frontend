@@ -6,30 +6,18 @@
         <h1 class="text-2xl font-bold text-[#1a1a2e]">이전 기록 조회</h1>
       </div>
 
-      <button
-        :class="
-          isDeleteMode
-            ? 'bg-red-500 text-white border-red-500'
-            : 'bg-white text-gray-600 border-gray-200'
-        "
-        class="flex items-center gap-2 px-4 py-2.5 border rounded-md text-sm font-medium cursor-pointer hover:bg-red-50 hover:text-red-500 hover:border-red-300 transition self-end -mb-3"
-        @click="toggleDeleteMode">
-        삭제
-      </button>
-    </div>
+      <!-- 툴바 -->
+      <div class="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-3 mb-5">
 
-    <!-- 툴바 -->
-    <div
-      class="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-3 mb-5">
-      <!-- 검색창 -->
-      <div
-        class="flex items-center bg-gray-50 border border-gray-100 rounded-md px-3 py-2 flex-1">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="파일명으로 검색..."
-          class="flex-1 outline-none text-sm text-gray-600 bg-transparent placeholder-gray-400" />
-      </div>
+        <!-- 검색창 -->
+        <div class="flex items-center bg-gray-50 border border-gray-100 rounded-md px-3 py-2 flex-1">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="유역명으로 검색..."
+            class="flex-1 outline-none text-sm text-gray-600 bg-transparent placeholder-gray-400"
+          />
+        </div>
 
       <!-- 정렬 -->
       <div class="flex items-center gap-1.5">
@@ -162,6 +150,11 @@
             <span class="text-gray-500">강준치</span>
 
             <span
+              v-if="getSeverity(video.ganjunchiCount) !== '보통'"
+              :class="getSeverity(video.ganjunchiCount) === '위험' ? 'bg-red-500' : 'bg-yellow-400'"
+              class="absolute top-2 right-2 text-white text-xs font-bold px-2 py-0.5 rounded-full"
+            >
+              ⚠ {{ getSeverity(video.ganjunchiCount) }}
               :class="
                 getSeverity(video.ganjunchiCount) === '위험'
                   ? 'text-red-500'
@@ -251,16 +244,15 @@ const filteredVideos = computed(() => {
     result = result.filter((video) => video.region === filterRegion.value);
   }
 
-  if (sortBy.value === "date_desc") {
-    result.sort((a, b) => b.date.localeCompare(a.date));
-  } else if (sortBy.value === "date_asc") {
-    result.sort((a, b) => a.date.localeCompare(b.date));
-  } else if (sortBy.value === "region") {
-    result.sort((a, b) => a.region.localeCompare(b.region));
-  }
-
-  return result;
-});
+const filteredVideos = computed(() => {
+  let result = [...videos.value]
+  if (searchQuery.value)  result = result.filter(v => v.region?.toLowerCase().includes(searchQuery.value.toLowerCase()))
+  if (filterRegion.value) result = result.filter(v => v.region === filterRegion.value)
+  if (sortBy.value === 'date_desc') result.sort((a, b) => b.date.localeCompare(a.date))
+  else if (sortBy.value === 'date_asc') result.sort((a, b) => a.date.localeCompare(b.date))
+  else if (sortBy.value === 'region')   result.sort((a, b) => a.region.localeCompare(b.region))
+  return result
+})
 
 // 필터/정렬/검색이 적용된 상태인지 확인
 const isFiltered = computed(
@@ -373,3 +365,4 @@ function deleteSelected() {
   toggleDeleteMode();
 }
 </script>
+
