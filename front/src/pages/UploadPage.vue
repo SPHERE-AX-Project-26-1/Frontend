@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-[calc(100vh-120px)] bg-slate-50">
+  <div class="min-h-[calc(100vh-120px)] bg-slate-50 px-8 py-8">
     <!-- 오른쪽 위 업로드 버튼 -->
     <div class="flex justify-end mb-6">
       <label
