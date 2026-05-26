@@ -16,7 +16,7 @@
       <!-- 정보 태그 행 -->
       <div class="flex items-center gap-2 px-6 py-4 border-b border-gray-200 flex-wrap">
         <span class="border border-gray-300 rounded px-3 py-1 text-xs text-gray-600">{{ video.date }}</span>
-        <span class="border border-gray-300 rounded px-3 py-1 text-xs text-gray-600">{{ video.region }}</span>
+        <span class="border border-gray-300 rounded px-3 py-1 text-xs text-gray-600">{{ video.name }}</span>
         <span class="border border-gray-300 rounded px-3 py-1 text-xs text-gray-600">{{ video.weather }} · 18°C</span>
         <span class="border border-gray-300 rounded px-3 py-1 text-xs text-gray-600">영상 길이 {{ video.duration }}</span>
       </div>
@@ -156,7 +156,7 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const compareCards = computed(() => [
-  { title: '유역 평균 대비', desc: `${props.video.region} 평균 강준치 발견 수와 비교`, label: '유역 평균', avg: props.video.regionAvg },
+  { title: '유역 평균 대비', desc: `${props.video.name} 평균 강준치 발견 수와 비교`, label: '유역 평균', avg: props.video.nameAvg },
   { title: '올해 평균 대비', desc: '2026년 전체 영상 평균 발견 개체 수와 비교',          label: '올해 평균', avg: props.video.yearAvg  },
 ])
 
@@ -190,3 +190,4 @@ function getDonutDash(skygazer, total) {
   return (skygazer / total) * CIRCUMFERENCE
 }
 </script>
+
