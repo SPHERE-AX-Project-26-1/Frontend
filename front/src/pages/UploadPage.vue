@@ -176,7 +176,7 @@
         </div>
       </div>
 
-      <!-- 3단계: 분석 진행중 (이 부분은 임시 + 논의 후 수정 예정입니다!) -->
+      <!-- 3단계: 분석 진행중 -->
       <div v-else-if="step === 3" class="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <!-- 왼쪽 큰 진행 카드 -->
         <div
@@ -257,7 +257,7 @@
                   {{ progress >= 100 ? "영상 분석 완료" : "AI 분석 진행 중" }}
                 </p>
                 <p class="text-xs text-slate-400">
-                  어종 탐지 및 개체 수 분석이 완료되었습니다.
+                  어종 탐지 및 강준치 개체 수 분석이 완료되었습니다.
                 </p>
               </div>
             </div>
@@ -297,6 +297,13 @@
                 {{ currentStatus }}
               </p>
             </div>
+
+            <div>
+              <p class="text-xs text-slate-400 mb-1">강준치 개체 수</p>
+              <p class="text-sm font-semibold text-slate-800">
+                {{ progress >= 100 ? `${skygazerCount}마리` : "-" }}
+              </p>
+            </div>
           </div>
 
           <div class="mt-8">
@@ -319,6 +326,7 @@ import { computed, ref } from "vue";
 const step = ref(1); // 1: 드롭박스만 / 2: 정보확인 / 3: 분석중
 const selectedRiver = ref("");
 const progress = ref(0);
+const skygazerCount = ref(0); // 강준치 개체 수
 
 const riverOptions = ref([
   { id: 1, name: "낙동강 A-12", address: "대구 달성군" },
@@ -407,6 +415,7 @@ const updateFileInfo = async (file) => {
 
   selectedRiver.value = "";
   progress.value = 0;
+  skygazerCount.value = 0;
   step.value = 2;
 };
 
@@ -434,25 +443,24 @@ const currentStatus = computed(() => {
   return "분석 완료";
 });
 
-const stepClass = (targetStep) => {
-  if (targetStep === 3 && progress.value >= 100) return "text-sky-300";
-  if (targetStep === 1 && progress.value >= 20) return "text-sky-300";
-  if (targetStep === 2 && progress.value >= 60) return "text-sky-300";
-  if (targetStep === 3 && progress.value >= 60) return "text-white";
-  return "text-slate-400";
-};
-
 const startAnalysis = () => {
   if (!selectedRiver.value) return;
 
   step.value = 3;
   progress.value = 0;
+  skygazerCount.value = 0;
 
   const timer = setInterval(() => {
     if (progress.value >= 100) {
       clearInterval(timer);
+
+      // TODO: 추후 백엔드 API 응답값으로 교체
+      // 예: skygazerCount.value = response.data.skygazerCount;
+      skygazerCount.value = 12;
+
       return;
     }
+
     progress.value += 5;
   }, 300);
 };
@@ -461,6 +469,7 @@ const resetPage = () => {
   step.value = 1;
   selectedRiver.value = "";
   progress.value = 0;
+  skygazerCount.value = 0;
   fileInfo.value = {
     name: "",
     size: "",
