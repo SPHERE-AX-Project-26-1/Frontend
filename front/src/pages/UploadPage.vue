@@ -4,7 +4,7 @@
     <div class="flex justify-end mb-6">
       <label
         for="file-upload"
-        class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-900 text-white text-sm font-semibold shadow-sm hover:bg-blue-800 transition cursor-pointer">
+        class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-900 text-white text-base font-semibold shadow-sm hover:bg-blue-800 transition cursor-pointer">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           class="w-4 h-4"
