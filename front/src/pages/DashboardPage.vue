@@ -42,7 +42,7 @@
                   {{ selectedRiver.name }}
                 </h3>
                 <p class="mt-1 text-sm text-slate-500">
-                  {{ selectedRiver.region }}
+                  {{ selectedRiver.address }}
                 </p>
               </div>
 
@@ -57,7 +57,7 @@
               <div class="rounded-2xl bg-[#F4FAFE] p-3">
                 <p class="text-xs text-slate-400">위치 정보</p>
                 <p class="mt-1 text-sm font-bold text-slate-700">
-                  {{ selectedRiver.gps }}
+                  {{ selectedRiver.latitude }}, {{ selectedRiver.longitude }}
                 </p>
               </div>
 
@@ -266,10 +266,6 @@ const showRecordModal = ref(false);
 const activeVideo = ref(null);
 const selectedRiver = ref(null);
 
-/*
-  mockVideos에 있는 region을 기준으로 유역 데이터를 자동 생성
-  같은 유역의 여러 영상은 하나의 마커로 묶임
-*/
 const rivers = computed(() => {
   const riverMap = new Map();
 
@@ -299,8 +295,7 @@ const rivers = computed(() => {
     return {
       id: riverName,
       name: riverName,
-      region: latestVideo.location,
-      gps: latestVideo.gps,
+      address: latestVideo.location,
       lastDate: latestVideo.date,
       detectCount: totalDetectCount,
       risk,
