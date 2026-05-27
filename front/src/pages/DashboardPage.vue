@@ -42,7 +42,7 @@
                   {{ selectedRiver.name }}
                 </h3>
                 <p class="mt-1 text-sm text-slate-500">
-                  {{ selectedRiver.address }}
+                  {{ selectedRiver.region }}
                 </p>
               </div>
 
@@ -57,7 +57,7 @@
               <div class="rounded-2xl bg-[#F4FAFE] p-3">
                 <p class="text-xs text-slate-400">위치 정보</p>
                 <p class="mt-1 text-sm font-bold text-slate-700">
-                  {{ selectedRiver.latitude }}, {{ selectedRiver.longitude }}
+                  {{ selectedRiver.gps }}
                 </p>
               </div>
 
@@ -71,7 +71,7 @@
               <div class="rounded-2xl bg-[#F4FAFE] p-3">
                 <p class="text-xs text-slate-400">누적 검출 수</p>
                 <p class="mt-1 text-sm font-bold text-[#08243D]">
-                  {{ selectedRiver.detectCount }}마리
+                  {{ selectedRiver.skygazerCount }}마리
                 </p>
               </div>
 
@@ -193,7 +193,7 @@
                       {{ river.name }}
                     </p>
                     <p class="text-xs text-slate-400">
-                      {{ river.detectCount }}마리 검출
+                      {{ river.skygazerCount }}마리 검출
                     </p>
                   </div>
                 </div>
@@ -266,6 +266,10 @@ const showRecordModal = ref(false);
 const activeVideo = ref(null);
 const selectedRiver = ref(null);
 
+/*
+  mockVideos에 있는 region을 기준으로 유역 데이터를 자동 생성
+  같은 유역의 여러 영상은 하나의 마커로 묶임
+*/
 const rivers = computed(() => {
   const riverMap = new Map();
 
@@ -284,20 +288,21 @@ const rivers = computed(() => {
 
     const latestVideo = sortedVideos[0];
 
-    const totalDetectCount = videos.reduce(
-      (sum, video) => sum + video.ganjunchiCount,
+    const totalSkygazerCount = videos.reduce(
+      (sum, video) => sum + video.skygazerCount,
       0,
     );
 
-    const risk = getRiskByCount(totalDetectCount);
+    const risk = getRiskByCount(totalSkygazerCount);
     const coordinate = riverCoordinates[riverName];
 
     return {
       id: riverName,
       name: riverName,
-      address: latestVideo.location,
+      region: latestVideo.location,
+      gps: latestVideo.gps,
       lastDate: latestVideo.date,
-      detectCount: totalDetectCount,
+      skygazerCount: totalSkygazerCount,
       risk,
       status: getStatusByRisk(risk),
 
@@ -323,7 +328,7 @@ const recentEvents = computed(() => {
     .sort((a, b) => b.uploadTime.localeCompare(a.uploadTime))
     .slice(0, 4)
     .map((video) => {
-      const risk = getRiskByVideoCount(video.ganjunchiCount);
+      const risk = getRiskByVideoCount(video.skygazerCount);
 
       return {
         id: video.id,
@@ -331,8 +336,8 @@ const recentEvents = computed(() => {
         date: formatShortDate(video.date),
         time: getTime(video.uploadTime),
         message:
-          video.ganjunchiCount > 0
-            ? `강준치 ${video.ganjunchiCount}마리 탐지${
+          video.skygazerCount > 0
+            ? `강준치 ${video.skygazerCount}마리 탐지${
                 risk === "위험" ? "<br>- 집중 모니터링 필요" : ""
               }`
             : "강준치 탐지 없음",
@@ -345,15 +350,15 @@ const statusItems = computed(() => {
   const totalRiverCount = rivers.value.length;
 
   const detectedRiverCount = rivers.value.filter(
-    (river) => river.detectCount > 0,
+    (river) => river.skygazerCount > 0,
   ).length;
 
   const dangerRiverCount = rivers.value.filter(
     (river) => river.risk === "위험",
   ).length;
 
-  const recentDetectCount = mockVideos.reduce(
-    (sum, video) => sum + video.ganjunchiCount,
+  const recentSkygazerCount = mockVideos.reduce(
+    (sum, video) => sum + video.skygazerCount,
     0,
   );
 
@@ -384,7 +389,7 @@ const statusItems = computed(() => {
     },
     {
       label: "누적 탐지",
-      value: recentDetectCount,
+      value: recentSkygazerCount,
       unit: "마리",
       description: "등록 영상 누적 기준",
       barColor: "bg-[#08243D]",
@@ -395,7 +400,7 @@ const statusItems = computed(() => {
 
 const topRivers = computed(() => {
   return [...rivers.value]
-    .sort((a, b) => b.detectCount - a.detectCount)
+    .sort((a, b) => b.skygazerCount - a.skygazerCount)
     .slice(0, 3);
 });
 
