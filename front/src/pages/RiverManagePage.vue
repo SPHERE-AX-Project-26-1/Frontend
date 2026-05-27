@@ -45,7 +45,7 @@
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="유역명 / 주소 검색"
+              placeholder="유역명 / 지역 검색"
               class="flex-1 outline-none text-sm text-slate-600 bg-transparent placeholder-slate-400" />
           </div>
 
@@ -74,7 +74,7 @@
             <thead class="bg-[#F4FAFE] text-slate-500">
               <tr>
                 <th class="px-4 py-3 text-left font-bold">유역명</th>
-                <th class="px-4 py-3 text-left font-bold">주소</th>
+                <th class="px-4 py-3 text-left font-bold">지역</th>
                 <th class="px-4 py-3 text-left font-bold">GPS</th>
                 <th class="px-4 py-3 text-left font-bold">위험도</th>
                 <th class="px-4 py-3 text-left font-bold">누적 탐지</th>
@@ -96,7 +96,7 @@
                 </td>
 
                 <td class="px-4 py-4 text-slate-600">
-                  {{ river.address }}
+                  {{ river.region }}
                 </td>
 
                 <td class="px-4 py-4 text-xs text-slate-500">
@@ -112,7 +112,7 @@
                 </td>
 
                 <td class="px-4 py-4 font-bold text-[#334E68]">
-                  {{ river.totalGanjunchiCount }}마리
+                  {{ river.totalSkygazerCount }}마리
                 </td>
 
                 <td class="px-4 py-4 text-slate-500">
@@ -166,12 +166,12 @@
 
           <div>
             <label class="block text-sm font-bold text-slate-600 mb-2">
-              주소
+              지역
             </label>
             <input
-              v-model="form.address"
+              v-model="form.region"
               type="text"
-              placeholder="예: 대구 달성군"
+              placeholder="예: 대구 북구"
               class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-100" />
           </div>
 
@@ -258,14 +258,14 @@
             <div>
               <p class="text-[11px] font-bold text-slate-400">누적 탐지</p>
               <p class="mt-1 text-base font-extrabold text-[#08243D]">
-                {{ form.totalGanjunchiCount }}마리
+                {{ form.totalSkygazerCount }}마리
               </p>
             </div>
 
             <div>
               <p class="text-[11px] font-bold text-slate-400">최근 탐지</p>
               <p class="mt-1 text-base font-extrabold text-[#08243D]">
-                {{ form.latestGanjunchiCount }}마리
+                {{ form.latestSkygazerCount }}마리
               </p>
             </div>
           </div>
@@ -393,7 +393,7 @@ const isCreateMode = ref(false);
 const emptyForm = {
   id: null,
   name: "",
-  address: "",
+  region: "",
   latitude: "",
   longitude: "",
   risk: "보통",
@@ -404,8 +404,8 @@ const emptyForm = {
   mapX: 50,
   mapY: 50,
   analysisCount: 0,
-  totalGanjunchiCount: 0,
-  latestGanjunchiCount: 0,
+  totalSkygazerCount: 0,
+  latestSkygazerCount: 0,
 };
 
 const form = ref({ ...emptyForm });
@@ -425,7 +425,7 @@ const filteredRivers = computed(() => {
     result = result.filter(
       (river) =>
         river.name.toLowerCase().includes(keyword) ||
-        river.address.toLowerCase().includes(keyword),
+        river.region.toLowerCase().includes(keyword),
     );
   }
 
@@ -441,7 +441,7 @@ const filteredRivers = computed(() => {
     const order = { 위험: 3, 주의: 2, 보통: 1 };
     result.sort((a, b) => order[b.risk] - order[a.risk]);
   } else if (sortBy.value === "count") {
-    result.sort((a, b) => b.totalGanjunchiCount - a.totalGanjunchiCount);
+    result.sort((a, b) => b.totalSkygazerCount - a.totalSkygazerCount);
   }
 
   return result;
@@ -459,7 +459,7 @@ function createRiversFromMockVideos(videos) {
       acc[key] = {
         id: key,
         name: video.region,
-        address: video.location,
+        region: video.location,
         latitude,
         longitude,
         videos: [],
@@ -477,12 +477,12 @@ function createRiversFromMockVideos(videos) {
 
     const latestVideo = sortedVideos[0];
 
-    const totalGanjunchiCount = river.videos.reduce(
-      (sum, video) => sum + video.ganjunchiCount,
+    const totalSkygazerCount = river.videos.reduce(
+      (sum, video) => sum + video.skygazerCount,
       0,
     );
 
-    const latestGanjunchiCount = latestVideo?.ganjunchiCount ?? 0;
+    const latestSkygazerCount = latestVideo?.skygazerCount ?? 0;
 
     const position = riverMapPosition[river.name] ?? {
       mapX: 35 + index * 12,
@@ -492,10 +492,10 @@ function createRiversFromMockVideos(videos) {
     return {
       id: index + 1,
       name: river.name,
-      address: river.address,
+      region: river.region,
       latitude: river.latitude,
       longitude: river.longitude,
-      risk: getRiskByCount(latestGanjunchiCount),
+      risk: getRiskByCount(latestSkygazerCount),
       lastAnalyzedAt: latestVideo?.date ?? "-",
       cautionThreshold: RISK_STANDARD.caution,
       dangerThreshold: RISK_STANDARD.danger,
@@ -503,8 +503,8 @@ function createRiversFromMockVideos(videos) {
       mapX: position.mapX,
       mapY: position.mapY,
       analysisCount: river.videos.length,
-      totalGanjunchiCount,
-      latestGanjunchiCount,
+      totalSkygazerCount,
+      latestSkygazerCount,
     };
   });
 }
@@ -544,8 +544,8 @@ function resetForm() {
 }
 
 function saveRiver() {
-  if (!form.value.name.trim() || !form.value.address.trim()) {
-    alert("유역명과 주소 정보를 입력해주세요.");
+  if (!form.value.name.trim() || !form.value.region.trim()) {
+    alert("유역명과 지역 정보를 입력해주세요.");
     return;
   }
 
@@ -561,8 +561,8 @@ function saveRiver() {
       createdAt: getToday(),
       lastAnalyzedAt: form.value.lastAnalyzedAt || "-",
       analysisCount: form.value.analysisCount || 0,
-      totalGanjunchiCount: form.value.totalGanjunchiCount || 0,
-      latestGanjunchiCount: form.value.latestGanjunchiCount || 0,
+      totalSkygazerCount: form.value.totalSkygazerCount || 0,
+      latestSkygazerCount: form.value.latestSkygazerCount || 0,
     };
 
     rivers.value.unshift(newRiver);
@@ -640,16 +640,16 @@ function handleBulkUpload(event) {
     const parsedRivers = rows
       .slice(1)
       .map((row, index) => {
-        const [name, address, latitude, longitude, risk] = row
+        const [name, region, latitude, longitude, risk] = row
           .split(",")
           .map((cell) => cell.trim());
 
-        if (!name || !address) return null;
+        if (!name || !region) return null;
 
         return {
           id: Date.now() + index,
           name,
-          address,
+          region,
           latitude: latitude || "-",
           longitude: longitude || "-",
           risk: riskOptions.includes(risk) ? risk : "보통",
@@ -660,8 +660,8 @@ function handleBulkUpload(event) {
           mapX: 40 + index * 6,
           mapY: 45 + index * 4,
           analysisCount: 0,
-          totalGanjunchiCount: 0,
-          latestGanjunchiCount: 0,
+          totalSkygazerCount: 0,
+          latestSkygazerCount: 0,
         };
       })
       .filter(Boolean);
