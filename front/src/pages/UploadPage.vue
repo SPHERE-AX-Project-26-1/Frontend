@@ -7,7 +7,7 @@
         class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-900 text-white text-base font-semibold shadow-sm hover:bg-blue-800 transition cursor-pointer">
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="w-4 h-4"
+          class="w-5 h-5"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -101,11 +101,12 @@
               v-model="selectedRiver"
               class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-200">
               <option disabled value="">유역을 선택해주세요</option>
-              <option>낙동강</option>
-              <option>금호강</option>
-              <option>한강</option>
-              <option>영산강</option>
-              <option>섬진강</option>
+              <option
+                v-for="river in riverOptions"
+                :key="river.id"
+                :value="river.id">
+                {{ river.name }}
+              </option>
             </select>
           </div>
 
@@ -158,7 +159,7 @@
             <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
               <p class="text-xs text-slate-400 mb-1">선택 유역</p>
               <p class="text-sm font-semibold text-slate-800">
-                {{ selectedRiver || "-" }}
+                {{ selectedRiverInfo?.name || "-" }}
               </p>
             </div>
           </div>
@@ -279,7 +280,7 @@
             <div>
               <p class="text-xs text-slate-400 mb-1">선택 유역</p>
               <p class="text-sm font-semibold text-slate-800">
-                {{ selectedRiver }}
+                {{ selectedRiverInfo?.name || "-" }}
               </p>
             </div>
 
@@ -319,11 +320,22 @@ const step = ref(1); // 1: 드롭박스만 / 2: 정보확인 / 3: 분석중
 const selectedRiver = ref("");
 const progress = ref(0);
 
+const riverOptions = ref([
+  { id: 1, name: "낙동강 A-12", address: "대구 달성군" },
+  { id: 2, name: "금호강 K-03", address: "대구 북구" },
+  { id: 3, name: "신천 S-07", address: "대구 수성구" },
+  { id: 4, name: "낙동강 B-01", address: "대구 달서구" },
+]);
+
 const fileInfo = ref({
   name: "",
   size: "",
   type: "",
   duration: "",
+});
+
+const selectedRiverInfo = computed(() => {
+  return riverOptions.value.find((river) => river.id === selectedRiver.value);
 });
 
 const formatFileSize = (bytes) => {
@@ -412,6 +424,13 @@ const currentStatusTitle = computed(() => {
   if (progress.value < 30) return "업로드 진행 중...";
   if (progress.value < 60) return "영상 전처리 중...";
   if (progress.value < 100) return "분석 중...";
+  return "분석 완료";
+});
+
+const currentStatus = computed(() => {
+  if (progress.value < 30) return "업로드 진행 중";
+  if (progress.value < 60) return "영상 전처리 중";
+  if (progress.value < 100) return "AI 분석 진행 중";
   return "분석 완료";
 });
 
