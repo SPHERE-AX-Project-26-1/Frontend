@@ -7,7 +7,7 @@
         class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-900 text-white text-base font-semibold shadow-sm hover:bg-blue-800 transition cursor-pointer">
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="w-4 h-4"
+          class="w-5 h-5"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -101,11 +101,12 @@
               v-model="selectedRiver"
               class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-200">
               <option disabled value="">유역을 선택해주세요</option>
-              <option>낙동강</option>
-              <option>금호강</option>
-              <option>한강</option>
-              <option>영산강</option>
-              <option>섬진강</option>
+              <option
+                v-for="river in riverOptions"
+                :key="river.id"
+                :value="river.id">
+                {{ river.name }}
+              </option>
             </select>
           </div>
 
@@ -158,7 +159,7 @@
             <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
               <p class="text-xs text-slate-400 mb-1">선택 유역</p>
               <p class="text-sm font-semibold text-slate-800">
-                {{ selectedRiver || "-" }}
+                {{ selectedRiverInfo?.name || "-" }}
               </p>
             </div>
           </div>
@@ -175,7 +176,7 @@
         </div>
       </div>
 
-      <!-- 3단계: 분석 진행중 (이 부분은 임시 + 논의 후 수정 예정입니다!) -->
+      <!-- 3단계: 분석 진행중 -->
       <div v-else-if="step === 3" class="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <!-- 왼쪽 큰 진행 카드 -->
         <div
@@ -256,7 +257,7 @@
                   {{ progress >= 100 ? "영상 분석 완료" : "AI 분석 진행 중" }}
                 </p>
                 <p class="text-xs text-slate-400">
-                  어종 탐지 및 개체 수 분석이 완료되었습니다.
+                  어종 탐지 및 강준치 개체 수 분석이 완료되었습니다.
                 </p>
               </div>
             </div>
@@ -279,7 +280,7 @@
             <div>
               <p class="text-xs text-slate-400 mb-1">선택 유역</p>
               <p class="text-sm font-semibold text-slate-800">
-                {{ selectedRiver }}
+                {{ selectedRiverInfo?.name || "-" }}
               </p>
             </div>
 
@@ -294,6 +295,13 @@
               <p class="text-xs text-slate-400 mb-1">현재 상태</p>
               <p class="text-sm font-semibold text-slate-800">
                 {{ currentStatus }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-slate-400 mb-1">강준치 개체 수</p>
+              <p class="text-sm font-semibold text-slate-800">
+                {{ progress >= 100 ? `${skygazerCount}마리` : "-" }}
               </p>
             </div>
           </div>
@@ -318,12 +326,24 @@ import { computed, ref } from "vue";
 const step = ref(1); // 1: 드롭박스만 / 2: 정보확인 / 3: 분석중
 const selectedRiver = ref("");
 const progress = ref(0);
+const skygazerCount = ref(0); // 강준치 개체 수
+
+const riverOptions = ref([
+  { id: 1, name: "낙동강 A-12", address: "대구 달성군" },
+  { id: 2, name: "금호강 K-03", address: "대구 북구" },
+  { id: 3, name: "신천 S-07", address: "대구 수성구" },
+  { id: 4, name: "낙동강 B-01", address: "대구 달서구" },
+]);
 
 const fileInfo = ref({
   name: "",
   size: "",
   type: "",
   duration: "",
+});
+
+const selectedRiverInfo = computed(() => {
+  return riverOptions.value.find((river) => river.id === selectedRiver.value);
 });
 
 const formatFileSize = (bytes) => {
@@ -395,6 +415,7 @@ const updateFileInfo = async (file) => {
 
   selectedRiver.value = "";
   progress.value = 0;
+  skygazerCount.value = 0;
   step.value = 2;
 };
 
@@ -415,25 +436,31 @@ const currentStatusTitle = computed(() => {
   return "분석 완료";
 });
 
-const stepClass = (targetStep) => {
-  if (targetStep === 3 && progress.value >= 100) return "text-sky-300";
-  if (targetStep === 1 && progress.value >= 20) return "text-sky-300";
-  if (targetStep === 2 && progress.value >= 60) return "text-sky-300";
-  if (targetStep === 3 && progress.value >= 60) return "text-white";
-  return "text-slate-400";
-};
+const currentStatus = computed(() => {
+  if (progress.value < 30) return "업로드 진행 중";
+  if (progress.value < 60) return "영상 전처리 중";
+  if (progress.value < 100) return "AI 분석 진행 중";
+  return "분석 완료";
+});
 
 const startAnalysis = () => {
   if (!selectedRiver.value) return;
 
   step.value = 3;
   progress.value = 0;
+  skygazerCount.value = 0;
 
   const timer = setInterval(() => {
     if (progress.value >= 100) {
       clearInterval(timer);
+
+      // TODO: 추후 백엔드 API 응답값으로 교체
+      // 예: skygazerCount.value = response.data.skygazerCount;
+      skygazerCount.value = 12;
+
       return;
     }
+
     progress.value += 5;
   }, 300);
 };
@@ -442,6 +469,7 @@ const resetPage = () => {
   step.value = 1;
   selectedRiver.value = "";
   progress.value = 0;
+  skygazerCount.value = 0;
   fileInfo.value = {
     name: "",
     size: "",
