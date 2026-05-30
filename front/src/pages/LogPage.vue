@@ -41,7 +41,7 @@
                 </span>
               </td>
               <td class="px-5 py-3.5 text-sm text-[#1e2d52]">{{ log.detail }}</td>
-              <td class="px-5 py-3.5 text-sm font-semibold text-[#2c3e6b]">{{ log.user }}</td>
+              <td class="px-5 py-3.5 text-sm font-semibold text-[#2c3e6b]">{{ log.username }}</td>
             </tr>
           </tbody>
         </table>
@@ -56,18 +56,18 @@ const filterEventType = ref('')
 
 // 목데이터 - 백엔드 연결 시 API로 교체
 const logs = [
-  { id: 1,  datetime: '2026-03-16 14:30', eventType: '파일 업로드',   detail: '낙동강A-12_2026-03-16.mp4 업로드 완료',       user: '사용자1' },
-  { id: 2,  datetime: '2026-03-16 14:45', eventType: '분석 완료',     detail: '낙동강A-12_2026-03-16 분석 완료',             user: '시스템' },
-  { id: 3,  datetime: '2026-03-16 15:00', eventType: '파일 다운로드', detail: '낙동강A-12_2026-03-16 데이터 다운로드',        user: '사용자3' },
-  { id: 4,  datetime: '2026-03-16 15:30', eventType: '로그인',        detail: '시스템 접속',                                 user: '사용자2' },
-  { id: 5,  datetime: '2026-03-16 16:10', eventType: '파일 업로드',   detail: '금호강K-03_2026-03-16.mp4 업로드 완료',       user: '사용자1' },
-  { id: 6,  datetime: '2026-03-16 16:25', eventType: '분석 완료',     detail: '금호강K-03_2026-03-16 분석 완료',             user: '시스템' },
-  { id: 7,  datetime: '2026-03-16 16:50', eventType: '영상 삭제',     detail: '신천S-07_2025-12-01.mp4 삭제',                user: '사용자1' },
-  { id: 8,  datetime: '2026-03-16 17:00', eventType: '로그아웃',      detail: '시스템 접속 종료',                            user: '사용자2' },
-  { id: 9,  datetime: '2026-03-15 09:10', eventType: '로그인',        detail: '시스템 접속',                                 user: '사용자1' },
-  { id: 10, datetime: '2026-03-15 09:30', eventType: '파일 업로드',   detail: '금호강K-03_2026-03-15.mp4 업로드 완료',       user: '사용자1' },
-  { id: 11, datetime: '2026-03-15 09:50', eventType: '분석 완료',     detail: '금호강K-03_2026-03-15 분석 완료',             user: '시스템' },
-  { id: 12, datetime: '2026-03-15 10:15', eventType: '파일 다운로드', detail: '금호강K-03_2026-03-15 데이터 다운로드',        user: '사용자3' },
+  { id: 1,  datetime: '2026-03-16 14:30', eventType: '파일 업로드',   detail: '낙동강A-12_2026-03-16.mp4 업로드 완료',       username: '사용자1' },
+  { id: 2,  datetime: '2026-03-16 14:45', eventType: '분석 완료',     detail: '낙동강A-12_2026-03-16 분석 완료',             username: '시스템' },
+  { id: 3,  datetime: '2026-03-16 15:00', eventType: '파일 다운로드', detail: '낙동강A-12_2026-03-16 데이터 다운로드',        username: '사용자3' },
+  { id: 4,  datetime: '2026-03-16 15:30', eventType: '로그인',        detail: '시스템 접속',                                 username: '사용자2' },
+  { id: 5,  datetime: '2026-03-16 16:10', eventType: '파일 업로드',   detail: '금호강K-03_2026-03-16.mp4 업로드 완료',       username: '사용자1' },
+  { id: 6,  datetime: '2026-03-16 16:25', eventType: '분석 완료',     detail: '금호강K-03_2026-03-16 분석 완료',             username: '시스템' },
+  { id: 7,  datetime: '2026-03-16 16:50', eventType: '영상 삭제',     detail: '신천S-07_2025-12-01.mp4 삭제',                username: '사용자1' },
+  { id: 8,  datetime: '2026-03-16 17:00', eventType: '로그아웃',      detail: '시스템 접속 종료',                            username: '사용자2' },
+  { id: 9,  datetime: '2026-03-15 09:10', eventType: '로그인',        detail: '시스템 접속',                                 username: '사용자1' },
+  { id: 10, datetime: '2026-03-15 09:30', eventType: '파일 업로드',   detail: '금호강K-03_2026-03-15.mp4 업로드 완료',       username: '사용자1' },
+  { id: 11, datetime: '2026-03-15 09:50', eventType: '분석 완료',     detail: '금호강K-03_2026-03-15 분석 완료',             username: '시스템' },
+  { id: 12, datetime: '2026-03-15 10:15', eventType: '파일 다운로드', detail: '금호강K-03_2026-03-15 데이터 다운로드',        username: '사용자3' },
 ]
 
 function badgeClass(eventType) {
@@ -92,7 +92,7 @@ const filteredLogs = computed(() =>
 
 function exportCSV() {
   const headers = ['발생 일시', '이벤트 종류', '상세 내용', '사용자']
-  const rows = filteredLogs.value.map(l => [l.datetime, l.eventType, l.detail, l.user])
+  const rows = filteredLogs.value.map(l => [l.datetime, l.eventType, l.detail, l.username])
   const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
