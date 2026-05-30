@@ -95,7 +95,7 @@ function handleLogin() {
     users = [];
   }
   const matched = users.find(
-    (u) => u.userId === userId.value && u.password === password.value,
+    (u) => u.user_id === userId.value && u.password === password.value,
   );
   if (matched) {
     localStorage.setItem("currentUser", JSON.stringify(matched));
