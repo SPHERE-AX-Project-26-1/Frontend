@@ -98,7 +98,7 @@
               분석 전 강 유역 선택
             </label>
             <select
-              v-model="selectedRiver"
+              v-model="selectedRiverId"
               class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-200">
               <option disabled value="">유역을 선택해주세요</option>
               <option
@@ -197,7 +197,7 @@
         <div class="mt-8 flex justify-end">
           <button
             class="px-6 py-3 rounded-xl bg-sky-500 text-white font-semibold hover:bg-sky-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="!selectedRiver || !selectedDate"
+            :disabled="!selectedRiverId || !selectedDate"
             @click="startAnalysis">
             분석 시작
           </button>
@@ -351,7 +351,7 @@ import { computed, ref, watch } from "vue";
 
 const step = ref(1); // 1: 드롭박스만 / 2: 정보확인 / 3: 분석 요청 후
 const selectedFile = ref(null);
-const selectedRiver = ref("");
+const selectedRiverId = ref("");
 
 const selectedYear = ref("");
 const selectedMonth = ref("");
@@ -361,12 +361,15 @@ const progress = ref(0);
 const analysisStatus = ref("idle"); // idle | loading | success | failed
 const skygazerCount = ref(0); // 강준치 개체 수
 
-const riverOptions = ref([
-  { id: 1, name: "낙동강 A-12", address: "대구 달성군" },
-  { id: 2, name: "금호강 K-03", address: "대구 북구" },
-  { id: 3, name: "신천 S-07", address: "대구 수성구" },
-  { id: 4, name: "낙동강 B-01", address: "대구 달서구" },
-]);
+const riverListResponse = {
+  rivers: [
+    { id: 1, name: "낙동강 A-12", address: "대구 달성군" },
+    { id: 2, name: "금호강 K-03", address: "대구 북구" },
+    { id: 3, name: "신천 S-07", address: "대구 수성구" },
+  ],
+};
+
+const riverOptions = ref(riverListResponse.rivers);
 
 const fileInfo = ref({
   name: "",
@@ -432,7 +435,7 @@ watch([selectedYear, selectedMonth], () => {
 });
 
 const selectedRiverInfo = computed(() => {
-  return riverOptions.value.find((river) => river.id === selectedRiver.value);
+  return riverOptions.value.find((river) => river.id === selectedRiverId.value);
 });
 
 const analysisTitle = computed(() => {
@@ -452,7 +455,7 @@ const analysisMessage = computed(() => {
   }
 
   if (analysisStatus.value === "failed") {
-    return "영상 분석 중 문제가 발생했습니다.";
+    return "영상 분석에 실패했습니다.";
   }
 
   return "";
@@ -604,7 +607,7 @@ const updateFileInfo = async (file) => {
     durationSeconds,
   };
 
-  selectedRiver.value = "";
+  selectedRiverId.value = "";
   resetSelectedDate();
   progress.value = 0;
   analysisStatus.value = "idle";
@@ -636,7 +639,7 @@ const startFakeProgress = () => {
 };
 
 const startAnalysis = async () => {
-  if (!selectedFile.value || !selectedRiver.value || !selectedDate.value) {
+  if (!selectedFile.value || !selectedRiverId.value || !selectedDate.value) {
     return;
   }
 
@@ -650,13 +653,13 @@ const startAnalysis = async () => {
 
   const formData = new FormData();
   formData.append("file", selectedFile.value);
-  formData.append("riverId", selectedRiver.value);
+  formData.append("riverId", selectedRiverId.value);
   formData.append("date", selectedDate.value);
   formData.append("duration", fileInfo.value.durationSeconds);
 
   console.log("영상 분석 요청 FormData");
   console.log("file:", selectedFile.value);
-  console.log("riverId:", selectedRiver.value);
+  console.log("riverId:", selectedRiverId.value);
   console.log("date:", selectedDate.value);
   console.log("duration:", fileInfo.value.durationSeconds);
 
@@ -678,14 +681,21 @@ const startAnalysis = async () => {
     // TODO: 임시 테스트용 코드
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
+    const response = {
+      data: {
+        id: 12,
+        status: "COMPLETE",
+        skygazerCount: 12,
+        message: "영상 분석이 완료되었습니다.",
+      },
+    };
+
     clearInterval(timer);
 
     progress.value = 100;
-    analysisStatus.value = "success";
-
-    // TODO: 추후 백엔드 API 응답값으로 교체
-    // 예: skygazerCount.value = response.data.skygazerCount;
-    skygazerCount.value = 12;
+    analysisStatus.value =
+      response.data.status === "COMPLETE" ? "success" : "failed";
+    skygazerCount.value = response.data.skygazerCount || 0;
   } catch (error) {
     clearInterval(timer);
 
@@ -699,7 +709,7 @@ const startAnalysis = async () => {
 const resetPage = () => {
   step.value = 1;
   selectedFile.value = null;
-  selectedRiver.value = "";
+  selectedRiverId.value = "";
   resetSelectedDate();
   progress.value = 0;
   analysisStatus.value = "idle";
