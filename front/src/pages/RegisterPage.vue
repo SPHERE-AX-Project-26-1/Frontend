@@ -187,7 +187,7 @@ function checkDuplicate() {
   }
   let users = []
   try { users = JSON.parse(localStorage.getItem('users') || '[]') } catch { users = [] }
-  if (users.some(u => u.userId === userId.value)) {
+  if (users.some(u => u.user_id === userId.value)) {
     idCheckMessage.value = '사용할 수 없는 아이디입니다.'
     idCheckResult.value = false
   } else {
@@ -219,7 +219,7 @@ function handleRegister() {
     return
   }
   const users = JSON.parse(localStorage.getItem('users') || '[]')
-  users.push({ userId: userId.value, password: password.value, name: name.value, email: email.value })
+  users.push({ user_id: userId.value, password: password.value, username: name.value, email: email.value })
   localStorage.setItem('users', JSON.stringify(users))
   router.push('/')
 }
