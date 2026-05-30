@@ -42,7 +42,7 @@
                   {{ selectedRiver.name }}
                 </h3>
                 <p class="mt-1 text-sm text-slate-500">
-                  {{ selectedRiver.region }}
+                  {{ selectedRiver.address }}
                 </p>
               </div>
 
@@ -57,21 +57,21 @@
               <div class="rounded-2xl bg-[#F4FAFE] p-3">
                 <p class="text-xs text-slate-400">위치 정보</p>
                 <p class="mt-1 text-sm font-bold text-slate-700">
-                  {{ selectedRiver.gps }}
+                  {{ selectedRiver.latitude }}, {{ selectedRiver.longitude }}
                 </p>
               </div>
 
               <div class="rounded-2xl bg-[#F4FAFE] p-3">
                 <p class="text-xs text-slate-400">최근 분석일</p>
                 <p class="mt-1 text-sm font-bold text-slate-700">
-                  {{ selectedRiver.lastDate }}
+                  {{ selectedRiver.lastAnalyzedAt }}
                 </p>
               </div>
 
               <div class="rounded-2xl bg-[#F4FAFE] p-3">
                 <p class="text-xs text-slate-400">누적 검출 수</p>
                 <p class="mt-1 text-sm font-bold text-[#08243D]">
-                  {{ selectedRiver.skygazerCount }}마리
+                  {{ selectedRiver.totalSkygazerCount }}마리
                 </p>
               </div>
 
@@ -130,7 +130,7 @@
                     {{ event.date }}
                   </p>
                   <p class="mt-0.5 text-xs font-extrabold text-[#08243D]">
-                    {{ event.time }}
+                    {{ getTime(event.uploadTime) }}
                   </p>
                 </div>
 
@@ -150,7 +150,7 @@
                   <div class="flex items-start justify-between gap-2">
                     <div>
                       <h3 class="text-sm font-extrabold text-[#08243D]">
-                        {{ event.riverName }}
+                        {{ event.name }}
                       </h3>
 
                       <p
@@ -193,7 +193,7 @@
                       {{ river.name }}
                     </p>
                     <p class="text-xs text-slate-400">
-                      {{ river.skygazerCount }}마리 검출
+                      {{ river.totalSkygazerCount }}마리 검출
                     </p>
                   </div>
                 </div>
@@ -289,9 +289,11 @@ const rivers = computed(() => {
     const latestVideo = sortedVideos[0];
 
     const totalSkygazerCount = videos.reduce(
-      (sum, video) => sum + video.skygazerCount,
+      (sum, video) => sum + video.ganjunchiCount,
       0,
     );
+
+    const latestSkygazerCount = latestVideo?.ganjunchiCount ?? 0;
 
     const risk = getRiskByCount(totalSkygazerCount);
     const coordinate = riverCoordinates[riverName];
@@ -299,12 +301,13 @@ const rivers = computed(() => {
     return {
       id: riverName,
       name: riverName,
-      region: latestVideo.location,
-      gps: latestVideo.gps,
-      lastDate: latestVideo.date,
-      skygazerCount: totalSkygazerCount,
+      address: latestVideo.location,
+      lastAnalyzedAt: latestVideo.date,
+      totalSkygazerCount,
+      latestSkygazerCount,
       risk,
       status: getStatusByRisk(risk),
+      latestVideoId: latestVideo.id,
 
       // 카카오맵 마커 표시용 좌표
       latitude: coordinate?.latitude,
@@ -328,16 +331,25 @@ const recentEvents = computed(() => {
     .sort((a, b) => b.uploadTime.localeCompare(a.uploadTime))
     .slice(0, 4)
     .map((video) => {
-      const risk = getRiskByVideoCount(video.skygazerCount);
+      const skygazerCount = video.ganjunchiCount;
+      const risk = getRiskByVideoCount(skygazerCount);
 
       return {
         id: video.id,
-        riverName: video.region,
+        filename: video.filename,
         date: formatShortDate(video.date),
-        time: getTime(video.uploadTime),
+        uploadDate: video.uploadDate,
+        uploadTime: video.uploadTime,
+        name: video.region,
+        latitude: video.latitude,
+        longitude: video.longitude,
+        skygazerCount,
+        totalCount: video.totalCount,
+        weather: video.weather,
+        duration: video.duration,
         message:
-          video.skygazerCount > 0
-            ? `강준치 ${video.skygazerCount}마리 탐지${
+          skygazerCount > 0
+            ? `강준치 ${skygazerCount}마리 탐지${
                 risk === "위험" ? "<br>- 집중 모니터링 필요" : ""
               }`
             : "강준치 탐지 없음",
@@ -350,15 +362,15 @@ const statusItems = computed(() => {
   const totalRiverCount = rivers.value.length;
 
   const detectedRiverCount = rivers.value.filter(
-    (river) => river.skygazerCount > 0,
+    (river) => river.totalSkygazerCount > 0,
   ).length;
 
   const dangerRiverCount = rivers.value.filter(
     (river) => river.risk === "위험",
   ).length;
 
-  const recentSkygazerCount = mockVideos.reduce(
-    (sum, video) => sum + video.skygazerCount,
+  const totalSkygazerCount = mockVideos.reduce(
+    (sum, video) => sum + video.ganjunchiCount,
     0,
   );
 
@@ -389,7 +401,7 @@ const statusItems = computed(() => {
     },
     {
       label: "누적 탐지",
-      value: recentSkygazerCount,
+      value: totalSkygazerCount,
       unit: "마리",
       description: "등록 영상 누적 기준",
       barColor: "bg-[#08243D]",
@@ -400,7 +412,7 @@ const statusItems = computed(() => {
 
 const topRivers = computed(() => {
   return [...rivers.value]
-    .sort((a, b) => b.skygazerCount - a.skygazerCount)
+    .sort((a, b) => b.totalSkygazerCount - a.totalSkygazerCount)
     .slice(0, 3);
 });
 
@@ -450,7 +462,7 @@ function getStatusByRisk(risk) {
 
 function formatShortDate(date) {
   const [year, month, day] = date.split("-");
-  return `${year.slice(2)}.${month}.${day}`;
+  return `${year.slice(2)}-${month}-${day}`;
 }
 
 function getTime(uploadTime) {
