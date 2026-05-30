@@ -204,91 +204,89 @@
         </div>
       </div>
 
-      <!-- 3단계: 분석 진행중 -->
+      <!-- 3단계: 분석 요청 후 -->
       <div v-else-if="step === 3" class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <!-- 왼쪽 큰 진행 카드 -->
+        <!-- 왼쪽 큰 상태 카드 -->
         <div
           class="xl:col-span-2 rounded-[28px] border border-slate-200 bg-white p-7 shadow-sm">
           <div class="flex items-start justify-between gap-4">
             <div>
               <p
-                class="text-xs font-bold tracking-[0.2em] text-sky-500 uppercase mb-2"></p>
+                class="text-xs font-bold tracking-[0.2em] text-sky-500 uppercase mb-2">
+                Video Analysis
+              </p>
               <h3 class="text-3xl font-bold text-slate-900">
-                {{ currentStatusTitle }}
+                {{ analysisTitle }}
               </h3>
             </div>
 
-            <div class="text-right">
-              <p class="text-xs text-slate-400 mb-1">진행률</p>
-              <p class="text-3xl font-extrabold text-sky-600">
-                {{ progress }}%
-              </p>
-            </div>
-          </div>
-
-          <div
-            class="mt-6 w-full h-3 rounded-full bg-slate-100 overflow-hidden">
             <div
-              class="h-full rounded-full bg-sky-500 transition-all duration-500"
-              :style="{ width: `${progress}%` }"></div>
+              class="px-4 py-2 rounded-full text-sm font-semibold"
+              :class="analysisBadgeClass">
+              {{ analysisBadgeText }}
+            </div>
           </div>
 
-          <div class="mt-8 space-y-4">
-            <div class="flex items-center gap-4">
-              <div
-                class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-                :class="
-                  progress >= 20
-                    ? 'bg-sky-500 text-white'
-                    : 'bg-slate-100 text-slate-400'
-                ">
-                1
-              </div>
-              <div>
-                <p class="text-sm font-semibold text-slate-800">업로드 완료</p>
-                <p class="text-xs text-slate-400">
-                  영상 파일 업로드가 정상적으로 완료되었습니다.
-                </p>
-              </div>
+          <!-- 임시 진행 게이지 -->
+          <div class="mt-7">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-sm font-semibold text-slate-700">
+                {{ progressLabel }}
+              </p>
+              <p class="text-sm font-bold text-sky-600">{{ progress }}%</p>
             </div>
 
-            <div class="flex items-center gap-4">
+            <div class="w-full h-3 rounded-full bg-slate-100 overflow-hidden">
               <div
-                class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-                :class="
-                  progress >= 60
-                    ? 'bg-sky-500 text-white'
-                    : 'bg-slate-100 text-slate-400'
-                ">
-                2
-              </div>
-              <div>
-                <p class="text-sm font-semibold text-slate-800">영상 전처리</p>
-                <p class="text-xs text-slate-400">
-                  프레임 분리 및 분석 가능한 형태로 변환이 완료되었습니다.
-                </p>
-              </div>
+                class="h-full rounded-full transition-all duration-500"
+                :class="progressBarClass"
+                :style="{ width: `${progress}%` }"></div>
             </div>
+          </div>
 
-            <div class="flex items-center gap-4">
-              <div
-                class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-                :class="
-                  progress >= 100
-                    ? 'bg-sky-500 text-white'
-                    : 'bg-blue-100 text-blue-600'
-                ">
-                3
-              </div>
-              <div>
-                <p class="text-sm font-semibold text-slate-800">
-                  {{ progress >= 100 ? "영상 분석 완료" : "AI 분석 진행 중" }}
-                </p>
-                <p class="text-xs text-slate-400">
-                  어종 탐지 및 강준치 개체 수 분석이 완료되었습니다.
-                </p>
-              </div>
-            </div>
+          <!-- 상태 메시지 -->
+          <div
+            class="mt-8 rounded-2xl border p-5"
+            :class="analysisMessageBoxClass">
+            <p
+              class="text-base font-semibold"
+              :class="analysisMessageTextClass">
+              {{ analysisMessage }}
+            </p>
+
+            <p
+              v-if="analysisStatus === 'loading'"
+              class="mt-2 text-sm text-slate-500">
+              분석이 완료되면 결과가 표시됩니다. 잠시만 기다려주세요.
+            </p>
+
+            <p
+              v-if="analysisStatus === 'success'"
+              class="mt-2 text-sm text-slate-500">
+              아래 버튼을 통해 새 영상을 업로드할 수 있습니다.
+            </p>
+
+            <p
+              v-if="analysisStatus === 'failed'"
+              class="mt-2 text-sm text-slate-500">
+              네트워크 상태나 영상 파일을 확인한 뒤 다시 시도해주세요.
+            </p>
+          </div>
+
+          <div class="mt-8 flex justify-end gap-3">
+            <button
+              v-if="analysisStatus === 'failed'"
+              class="px-6 py-3 rounded-xl bg-sky-500 text-white font-semibold hover:bg-sky-600 transition"
+              @click="startAnalysis">
+              다시 분석하기
+            </button>
+
+            <button
+              v-if="analysisStatus === 'success' || analysisStatus === 'failed'"
+              class="px-6 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold hover:bg-slate-100 transition"
+              @click="resetPage">
+              새 영상 업로드
+            </button>
           </div>
         </div>
 
@@ -336,18 +334,11 @@
             <div>
               <p class="text-xs text-slate-400 mb-1">강준치 개체 수</p>
               <p class="text-sm font-semibold text-slate-800">
-                {{ progress >= 100 ? `${skygazerCount}마리` : "-" }}
+                {{
+                  analysisStatus === "success" ? `${skygazerCount}마리` : "-"
+                }}
               </p>
             </div>
-          </div>
-
-          <div class="mt-8">
-            <button
-              v-if="progress >= 100"
-              class="w-full px-6 py-3 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold hover:bg-slate-100 transition"
-              @click="resetPage">
-              새 영상 업로드
-            </button>
           </div>
         </div>
       </div>
@@ -358,7 +349,7 @@
 <script setup>
 import { computed, ref, watch } from "vue";
 
-const step = ref(1); // 1: 드롭박스만 / 2: 정보확인 / 3: 분석중
+const step = ref(1); // 1: 드롭박스만 / 2: 정보확인 / 3: 분석 요청 후
 const selectedFile = ref(null);
 const selectedRiver = ref("");
 
@@ -367,6 +358,7 @@ const selectedMonth = ref("");
 const selectedDay = ref("");
 
 const progress = ref(0);
+const analysisStatus = ref("idle"); // idle | loading | success | failed
 const skygazerCount = ref(0); // 강준치 개체 수
 
 const riverOptions = ref([
@@ -441,6 +433,89 @@ watch([selectedYear, selectedMonth], () => {
 
 const selectedRiverInfo = computed(() => {
   return riverOptions.value.find((river) => river.id === selectedRiver.value);
+});
+
+const analysisTitle = computed(() => {
+  if (analysisStatus.value === "loading") return "영상 분석 중...";
+  if (analysisStatus.value === "success") return "분석 완료";
+  if (analysisStatus.value === "failed") return "분석 실패";
+  return "영상 분석";
+});
+
+const analysisMessage = computed(() => {
+  if (analysisStatus.value === "loading") {
+    return "영상 분석 요청이 접수되어 분석이 진행되고 있습니다.";
+  }
+
+  if (analysisStatus.value === "success") {
+    return "영상 분석이 완료되었습니다.";
+  }
+
+  if (analysisStatus.value === "failed") {
+    return "영상 분석 중 문제가 발생했습니다.";
+  }
+
+  return "";
+});
+
+const analysisBadgeText = computed(() => {
+  if (analysisStatus.value === "loading") return "분석 중";
+  if (analysisStatus.value === "success") return "완료";
+  if (analysisStatus.value === "failed") return "실패";
+  return "대기";
+});
+
+const analysisBadgeClass = computed(() => {
+  if (analysisStatus.value === "loading") {
+    return "bg-sky-100 text-sky-700";
+  }
+
+  if (analysisStatus.value === "success") {
+    return "bg-sky-100 text-sky-700";
+  }
+
+  if (analysisStatus.value === "failed") {
+    return "bg-red-100 text-red-700";
+  }
+
+  return "bg-slate-100 text-slate-500";
+});
+
+const progressLabel = computed(() => {
+  if (analysisStatus.value === "loading") return "분석 요청 처리 중";
+  if (analysisStatus.value === "success") return "분석 완료";
+  if (analysisStatus.value === "failed") return "분석 실패";
+  return "대기 중";
+});
+
+const progressBarClass = computed(() => {
+  if (analysisStatus.value === "failed") return "bg-red-500";
+  return "bg-sky-500";
+});
+
+const analysisMessageBoxClass = computed(() => {
+  if (analysisStatus.value === "failed") {
+    return "bg-red-50 border-red-100";
+  }
+
+  if (analysisStatus.value === "success") {
+    return "bg-sky-50 border-sky-100";
+  }
+
+  return "bg-slate-50 border-slate-200";
+});
+
+const analysisMessageTextClass = computed(() => {
+  if (analysisStatus.value === "failed") return "text-red-700";
+  if (analysisStatus.value === "success") return "text-sky-700";
+  return "text-slate-800";
+});
+
+const currentStatus = computed(() => {
+  if (analysisStatus.value === "loading") return "분석 중";
+  if (analysisStatus.value === "success") return "분석 완료";
+  if (analysisStatus.value === "failed") return "분석 실패";
+  return "-";
 });
 
 const formatFileSize = (bytes) => {
@@ -532,6 +607,7 @@ const updateFileInfo = async (file) => {
   selectedRiver.value = "";
   resetSelectedDate();
   progress.value = 0;
+  analysisStatus.value = "idle";
   skygazerCount.value = 0;
   step.value = 2;
 };
@@ -549,19 +625,15 @@ const handleDrop = async (event) => {
   if (file) await updateFileInfo(file);
 };
 
-const currentStatusTitle = computed(() => {
-  if (progress.value < 30) return "업로드 진행 중...";
-  if (progress.value < 60) return "영상 전처리 중...";
-  if (progress.value < 100) return "분석 중...";
-  return "분석 완료";
-});
+const startFakeProgress = () => {
+  progress.value = 0;
 
-const currentStatus = computed(() => {
-  if (progress.value < 30) return "업로드 진행 중";
-  if (progress.value < 60) return "영상 전처리 중";
-  if (progress.value < 100) return "AI 분석 진행 중";
-  return "분석 완료";
-});
+  return setInterval(() => {
+    if (progress.value < 90) {
+      progress.value += 5;
+    }
+  }, 500);
+};
 
 const startAnalysis = async () => {
   if (!selectedFile.value || !selectedRiver.value || !selectedDate.value) {
@@ -582,16 +654,6 @@ const startAnalysis = async () => {
   formData.append("date", selectedDate.value);
   formData.append("duration", fileInfo.value.durationSeconds);
 
-  // TODO: 백엔드 연결 시 아래 부분 교체
-  // 예시:
-  // const response = await axios.post("/videos", formData, {
-  //   headers: {
-  //     "Content-Type": "multipart/form-data",
-  //   },
-  // });
-  //
-  // skygazerCount.value = response.data.skygazerCount;
-
   console.log("영상 분석 요청 FormData");
   console.log("file:", selectedFile.value);
   console.log("riverId:", selectedRiver.value);
@@ -599,21 +661,39 @@ const startAnalysis = async () => {
   console.log("duration:", fileInfo.value.durationSeconds);
 
   step.value = 3;
+  analysisStatus.value = "loading";
   progress.value = 0;
   skygazerCount.value = 0;
 
-  const timer = setInterval(() => {
-    if (progress.value >= 100) {
-      clearInterval(timer);
+  const timer = startFakeProgress();
 
-      // TODO: 추후 백엔드 API 응답값으로 교체
-      skygazerCount.value = 12;
+  try {
+    // TODO: 백엔드 연결 시 아래 부분 교체
+    // const response = await axios.post("/videos", formData, {
+    //   headers: {
+    //     "Content-Type": "multipart/form-data",
+    //   },
+    // });
 
-      return;
-    }
+    // TODO: 임시 테스트용 코드
+    await new Promise((resolve) => setTimeout(resolve, 3000));
 
-    progress.value += 5;
-  }, 300);
+    clearInterval(timer);
+
+    progress.value = 100;
+    analysisStatus.value = "success";
+
+    // TODO: 추후 백엔드 API 응답값으로 교체
+    // 예: skygazerCount.value = response.data.skygazerCount;
+    skygazerCount.value = 12;
+  } catch (error) {
+    clearInterval(timer);
+
+    progress.value = 100;
+    analysisStatus.value = "failed";
+
+    console.error("영상 분석 요청 실패:", error);
+  }
 };
 
 const resetPage = () => {
@@ -622,6 +702,7 @@ const resetPage = () => {
   selectedRiver.value = "";
   resetSelectedDate();
   progress.value = 0;
+  analysisStatus.value = "idle";
   skygazerCount.value = 0;
 
   fileInfo.value = {
