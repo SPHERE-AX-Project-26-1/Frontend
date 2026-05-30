@@ -91,7 +91,7 @@
           </p>
         </div>
 
-        <!-- 유역 선택 / 상태 -->
+        <!-- 유역 선택 / 촬영일 선택 -->
         <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label class="block text-sm font-semibold text-slate-700 mb-2">
@@ -112,12 +112,12 @@
 
           <div>
             <label class="block text-sm font-semibold text-slate-700 mb-2">
-              분석 예상 시간
+              촬영일 선택
             </label>
-            <div
-              class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-              11분
-            </div>
+            <input
+              v-model="selectedDate"
+              type="date"
+              class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-200" />
           </div>
         </div>
 
@@ -157,9 +157,9 @@
             </div>
 
             <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
-              <p class="text-xs text-slate-400 mb-1">선택 유역</p>
+              <p class="text-xs text-slate-400 mb-1">촬영일</p>
               <p class="text-sm font-semibold text-slate-800">
-                {{ selectedRiverInfo?.name || "-" }}
+                {{ selectedDate || "-" }}
               </p>
             </div>
           </div>
@@ -169,7 +169,7 @@
         <div class="mt-8 flex justify-end">
           <button
             class="px-6 py-3 rounded-xl bg-sky-500 text-white font-semibold hover:bg-sky-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="!selectedRiver"
+            :disabled="!selectedRiver || !selectedDate"
             @click="startAnalysis">
             분석 시작
           </button>
@@ -285,6 +285,13 @@
             </div>
 
             <div>
+              <p class="text-xs text-slate-400 mb-1">촬영일</p>
+              <p class="text-sm font-semibold text-slate-800">
+                {{ selectedDate || "-" }}
+              </p>
+            </div>
+
+            <div>
               <p class="text-xs text-slate-400 mb-1">영상 길이</p>
               <p class="text-sm font-semibold text-slate-800">
                 {{ fileInfo.duration || "-" }}
@@ -324,7 +331,9 @@
 import { computed, ref } from "vue";
 
 const step = ref(1); // 1: 드롭박스만 / 2: 정보확인 / 3: 분석중
+const selectedFile = ref(null);
 const selectedRiver = ref("");
+const selectedDate = ref("");
 const progress = ref(0);
 const skygazerCount = ref(0); // 강준치 개체 수
 
@@ -340,6 +349,7 @@ const fileInfo = ref({
   size: "",
   type: "",
   duration: "",
+  durationSeconds: 0,
 });
 
 const selectedRiverInfo = computed(() => {
@@ -389,14 +399,24 @@ const getVideoDuration = (file) => {
     video.src = objectUrl;
 
     video.onloadedmetadata = () => {
-      const duration = formatDuration(video.duration);
+      const durationSeconds = Math.floor(video.duration);
+      const duration = formatDuration(durationSeconds);
+
       URL.revokeObjectURL(objectUrl);
-      resolve(duration);
+
+      resolve({
+        duration,
+        durationSeconds,
+      });
     };
 
     video.onerror = () => {
       URL.revokeObjectURL(objectUrl);
-      resolve("-");
+
+      resolve({
+        duration: "-",
+        durationSeconds: 0,
+      });
     };
   });
 };
@@ -404,16 +424,20 @@ const getVideoDuration = (file) => {
 const updateFileInfo = async (file) => {
   if (!file) return;
 
-  const duration = await getVideoDuration(file);
+  selectedFile.value = file;
+
+  const { duration, durationSeconds } = await getVideoDuration(file);
 
   fileInfo.value = {
     name: file.name,
     size: formatFileSize(file.size),
     type: file.type || "video/*",
     duration,
+    durationSeconds,
   };
 
   selectedRiver.value = "";
+  selectedDate.value = "";
   progress.value = 0;
   skygazerCount.value = 0;
   step.value = 2;
@@ -422,6 +446,9 @@ const updateFileInfo = async (file) => {
 const handleFileChange = async (event) => {
   const file = event.target.files?.[0];
   if (file) await updateFileInfo(file);
+
+  // 같은 파일을 다시 선택해도 change 이벤트가 발생하도록 초기화
+  event.target.value = "";
 };
 
 const handleDrop = async (event) => {
@@ -443,8 +470,39 @@ const currentStatus = computed(() => {
   return "분석 완료";
 });
 
-const startAnalysis = () => {
-  if (!selectedRiver.value) return;
+const startAnalysis = async () => {
+  if (!selectedFile.value || !selectedRiver.value || !selectedDate.value)
+    return;
+
+  // API 명세서 기준:
+  // {
+  //   file: "File",
+  //   riverId: 1,
+  //   date: "2026-03-15",
+  //   duration: 192
+  // }
+
+  const formData = new FormData();
+  formData.append("file", selectedFile.value);
+  formData.append("riverId", selectedRiver.value);
+  formData.append("date", selectedDate.value);
+  formData.append("duration", fileInfo.value.durationSeconds);
+
+  // TODO: 백엔드 연결 시 아래 부분 교체
+  // 예시:
+  // const response = await axios.post("/videos", formData, {
+  //   headers: {
+  //     "Content-Type": "multipart/form-data",
+  //   },
+  // });
+  //
+  // skygazerCount.value = response.data.skygazerCount;
+
+  console.log("영상 분석 요청 FormData");
+  console.log("file:", selectedFile.value);
+  console.log("riverId:", selectedRiver.value);
+  console.log("date:", selectedDate.value);
+  console.log("duration:", fileInfo.value.durationSeconds);
 
   step.value = 3;
   progress.value = 0;
@@ -455,7 +513,6 @@ const startAnalysis = () => {
       clearInterval(timer);
 
       // TODO: 추후 백엔드 API 응답값으로 교체
-      // 예: skygazerCount.value = response.data.skygazerCount;
       skygazerCount.value = 12;
 
       return;
@@ -467,14 +524,18 @@ const startAnalysis = () => {
 
 const resetPage = () => {
   step.value = 1;
+  selectedFile.value = null;
   selectedRiver.value = "";
+  selectedDate.value = "";
   progress.value = 0;
   skygazerCount.value = 0;
+
   fileInfo.value = {
     name: "",
     size: "",
     type: "",
     duration: "",
+    durationSeconds: 0,
   };
 };
 </script>
