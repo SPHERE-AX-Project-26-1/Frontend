@@ -114,10 +114,38 @@
             <label class="block text-sm font-semibold text-slate-700 mb-2">
               촬영일 선택
             </label>
-            <input
-              v-model="selectedDate"
-              type="date"
-              class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-200" />
+
+            <div class="grid grid-cols-3 gap-2">
+              <select
+                v-model="selectedYear"
+                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-200">
+                <option disabled value="">년</option>
+                <option v-for="year in yearOptions" :key="year" :value="year">
+                  {{ year }}년
+                </option>
+              </select>
+
+              <select
+                v-model="selectedMonth"
+                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-200">
+                <option disabled value="">월</option>
+                <option
+                  v-for="month in monthOptions"
+                  :key="month"
+                  :value="month">
+                  {{ month }}월
+                </option>
+              </select>
+
+              <select
+                v-model="selectedDay"
+                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-200">
+                <option disabled value="">일</option>
+                <option v-for="day in dayOptions" :key="day" :value="day">
+                  {{ day }}일
+                </option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -328,12 +356,16 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 
 const step = ref(1); // 1: 드롭박스만 / 2: 정보확인 / 3: 분석중
 const selectedFile = ref(null);
 const selectedRiver = ref("");
-const selectedDate = ref("");
+
+const selectedYear = ref("");
+const selectedMonth = ref("");
+const selectedDay = ref("");
+
 const progress = ref(0);
 const skygazerCount = ref(0); // 강준치 개체 수
 
@@ -350,6 +382,61 @@ const fileInfo = ref({
   type: "",
   duration: "",
   durationSeconds: 0,
+});
+
+const currentYear = new Date().getFullYear();
+
+const yearOptions = computed(() => {
+  const years = [];
+
+  for (let year = currentYear; year >= currentYear - 10; year--) {
+    years.push(year);
+  }
+
+  return years;
+});
+
+const monthOptions = computed(() => {
+  return Array.from({ length: 12 }, (_, index) => index + 1);
+});
+
+const dayOptions = computed(() => {
+  if (!selectedYear.value || !selectedMonth.value) {
+    return Array.from({ length: 31 }, (_, index) => index + 1);
+  }
+
+  const lastDay = new Date(
+    selectedYear.value,
+    selectedMonth.value,
+    0,
+  ).getDate();
+
+  return Array.from({ length: lastDay }, (_, index) => index + 1);
+});
+
+const selectedDate = computed(() => {
+  if (!selectedYear.value || !selectedMonth.value || !selectedDay.value) {
+    return "";
+  }
+
+  const month = String(selectedMonth.value).padStart(2, "0");
+  const day = String(selectedDay.value).padStart(2, "0");
+
+  return `${selectedYear.value}-${month}-${day}`;
+});
+
+watch([selectedYear, selectedMonth], () => {
+  if (!selectedDay.value) return;
+
+  const lastDay = new Date(
+    selectedYear.value,
+    selectedMonth.value,
+    0,
+  ).getDate();
+
+  if (selectedDay.value > lastDay) {
+    selectedDay.value = "";
+  }
 });
 
 const selectedRiverInfo = computed(() => {
@@ -421,6 +508,12 @@ const getVideoDuration = (file) => {
   });
 };
 
+const resetSelectedDate = () => {
+  selectedYear.value = "";
+  selectedMonth.value = "";
+  selectedDay.value = "";
+};
+
 const updateFileInfo = async (file) => {
   if (!file) return;
 
@@ -437,7 +530,7 @@ const updateFileInfo = async (file) => {
   };
 
   selectedRiver.value = "";
-  selectedDate.value = "";
+  resetSelectedDate();
   progress.value = 0;
   skygazerCount.value = 0;
   step.value = 2;
@@ -471,8 +564,9 @@ const currentStatus = computed(() => {
 });
 
 const startAnalysis = async () => {
-  if (!selectedFile.value || !selectedRiver.value || !selectedDate.value)
+  if (!selectedFile.value || !selectedRiver.value || !selectedDate.value) {
     return;
+  }
 
   // API 명세서 기준:
   // {
@@ -526,7 +620,7 @@ const resetPage = () => {
   step.value = 1;
   selectedFile.value = null;
   selectedRiver.value = "";
-  selectedDate.value = "";
+  resetSelectedDate();
   progress.value = 0;
   skygazerCount.value = 0;
 
