@@ -96,7 +96,7 @@
                 </td>
 
                 <td class="px-4 py-4 text-slate-600">
-                  {{ river.region }}
+                  {{ river.address }}
                 </td>
 
                 <td class="px-4 py-4 text-xs text-slate-500">
@@ -138,10 +138,6 @@
             <h2 class="text-xl font-extrabold text-[#08243D]">
               {{ isCreateMode ? "새 유역 등록" : "상세보기 및 편집" }}
             </h2>
-
-            <p v-if="!isCreateMode" class="mt-1 text-xs text-slate-400">
-              영상 분석 목데이터 기준으로 집계된 정보입니다.
-            </p>
           </div>
 
           <span
@@ -169,7 +165,7 @@
               지역
             </label>
             <input
-              v-model="form.region"
+              v-model="form.address"
               type="text"
               placeholder="예: 대구 북구"
               class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-100" />
@@ -393,7 +389,7 @@ const isCreateMode = ref(false);
 const emptyForm = {
   id: null,
   name: "",
-  region: "",
+  address: "",
   latitude: "",
   longitude: "",
   risk: "보통",
@@ -425,7 +421,7 @@ const filteredRivers = computed(() => {
     result = result.filter(
       (river) =>
         river.name.toLowerCase().includes(keyword) ||
-        river.region.toLowerCase().includes(keyword),
+        river.address.toLowerCase().includes(keyword),
     );
   }
 
@@ -459,7 +455,7 @@ function createRiversFromMockVideos(videos) {
       acc[key] = {
         id: key,
         name: video.region,
-        region: video.location,
+        address: video.location,
         latitude,
         longitude,
         videos: [],
@@ -478,11 +474,19 @@ function createRiversFromMockVideos(videos) {
     const latestVideo = sortedVideos[0];
 
     const totalSkygazerCount = river.videos.reduce(
+<<<<<<< Updated upstream
       (sum, video) => sum + video.skygazerCount,
       0,
     );
 
     const latestSkygazerCount = latestVideo?.skygazerCount ?? 0;
+=======
+      (sum, video) => sum + video.ganjunchiCount,
+      0,
+    );
+
+    const latestSkygazerCount = latestVideo?.ganjunchiCount ?? 0;
+>>>>>>> Stashed changes
 
     const position = riverMapPosition[river.name] ?? {
       mapX: 35 + index * 12,
@@ -492,7 +496,7 @@ function createRiversFromMockVideos(videos) {
     return {
       id: index + 1,
       name: river.name,
-      region: river.region,
+      address: river.address,
       latitude: river.latitude,
       longitude: river.longitude,
       risk: getRiskByCount(latestSkygazerCount),
@@ -544,7 +548,7 @@ function resetForm() {
 }
 
 function saveRiver() {
-  if (!form.value.name.trim() || !form.value.region.trim()) {
+  if (!form.value.name.trim() || !form.value.address.trim()) {
     alert("유역명과 지역 정보를 입력해주세요.");
     return;
   }
@@ -640,16 +644,16 @@ function handleBulkUpload(event) {
     const parsedRivers = rows
       .slice(1)
       .map((row, index) => {
-        const [name, region, latitude, longitude, risk] = row
+        const [name, address, latitude, longitude, risk] = row
           .split(",")
           .map((cell) => cell.trim());
 
-        if (!name || !region) return null;
+        if (!name || !address) return null;
 
         return {
           id: Date.now() + index,
           name,
-          region,
+          address,
           latitude: latitude || "-",
           longitude: longitude || "-",
           risk: riskOptions.includes(risk) ? risk : "보통",
