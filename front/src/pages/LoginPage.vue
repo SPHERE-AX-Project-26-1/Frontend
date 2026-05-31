@@ -69,6 +69,7 @@
 import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import logo from "@/assets/logo.jpg";
+import { login } from "@/api/authApi";
 
 const router = useRouter();
 const userId = ref("");
@@ -88,20 +89,17 @@ function handleLogin() {
     loginError.value = "비밀번호를 입력해주세요.";
     return;
   }
-  let users = [];
-  try {
-    users = JSON.parse(localStorage.getItem("users") || "[]");
-  } catch {
-    users = [];
-  }
-  const matched = users.find(
-    (u) => u.user_id === userId.value && u.password === password.value,
-  );
-  if (matched) {
-    localStorage.setItem("currentUser", JSON.stringify(matched));
-    router.push("/app/dashboard");
-  } else {
-    loginError.value = "아이디 또는 비밀번호가 올바르지 않습니다.";
-  }
+  console.log("로그인 시도:", { userId: userId.value, password: password.value });
+  login(userId.value, password.value)
+    .then((response) => {
+      console.log("로그인 성공:", response);
+      const token = response.token;
+      localStorage.setItem("accessToken", token);
+      router.push("/app/dashboard");
+    })
+    .catch((err) => {
+      console.log("로그인 실패:", err.response?.message || err);
+      loginError.value = err.response?.data?.message || "로그인에 실패했습니다.";
+    });
 }
 </script>

@@ -474,19 +474,11 @@ function createRiversFromMockVideos(videos) {
     const latestVideo = sortedVideos[0];
 
     const totalSkygazerCount = river.videos.reduce(
-<<<<<<< Updated upstream
       (sum, video) => sum + video.skygazerCount,
       0,
     );
 
     const latestSkygazerCount = latestVideo?.skygazerCount ?? 0;
-=======
-      (sum, video) => sum + video.ganjunchiCount,
-      0,
-    );
-
-    const latestSkygazerCount = latestVideo?.ganjunchiCount ?? 0;
->>>>>>> Stashed changes
 
     const position = riverMapPosition[river.name] ?? {
       mapX: 35 + index * 12,

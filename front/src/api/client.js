@@ -5,15 +5,26 @@ const apiClient = axios.create({
   timeout: 10000,
 });
 
+const PUBLIC_ENDPOINTS = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/check-username",
+];
+
 apiClient.interceptors.request.use(
   (config) => {
+    const url = config.url || "";
 
-    // 로그인 시 백엔드로부터 발급받은 액세스 토큰을 로컬 스토리지에 저장했다고 가정
-    // 로컬 스토리지에서 액세스 토큰을 가져와서 요청 헤더에 추가
-    const token = localStorage.getItem("accessToken");
+    const isPublicEndpoint = PUBLIC_ENDPOINTS.some((endpoint) =>
+      url.includes(endpoint)
+    );
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (!isPublicEndpoint) {
+      const token = localStorage.getItem("accessToken");
+
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
 
     return config;
