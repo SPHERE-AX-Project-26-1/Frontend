@@ -87,18 +87,6 @@
           />
         </div>
 
-        <!-- 이메일 -->
-        <div class="mb-4">
-          <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">이메일 주소</label>
-          <input
-            id="email"
-            v-model="email"
-            type="email"
-            placeholder="이메일 주소를 입력해주세요"
-            class="w-full px-4 py-3.5 border border-gray-300 rounded-md text-sm outline-none transition focus:border-[#5b6fd6] bg-white"
-          />
-        </div>
-
         <!-- 버튼 -->
         <div class="flex justify-center gap-3 mt-7">
           <RouterLink
@@ -131,7 +119,6 @@ const userId = ref('')
 const password = ref('')
 const passwordConfirm = ref('')
 const name = ref('')
-const email = ref('')
 
 const idCheckMessage = ref('')
 const idCheckResult = ref(false)
@@ -214,12 +201,12 @@ function handleRegister() {
     alert('비밀번호가 일치하지 않습니다.')
     return
   }
-  if (!name.value || !email.value) {
-    alert('이름과 이메일을 입력해주세요.')
+  if (!name.value) {
+    alert('이름을 입력해주세요.')
     return
   }
   const users = JSON.parse(localStorage.getItem('users') || '[]')
-  users.push({ user_id: userId.value, password: password.value, username: name.value, email: email.value })
+  users.push({ user_id: userId.value, password: password.value, username: name.value })
   localStorage.setItem('users', JSON.stringify(users))
   router.push('/')
 }
