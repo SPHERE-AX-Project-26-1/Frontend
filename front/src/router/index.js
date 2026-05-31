@@ -69,7 +69,7 @@ const router = createRouter({
 const publicPaths = ["/", "/register"];
 
 router.beforeEach((to) => {
-  const isLoggedIn = localStorage.getItem("currentUser");
+  const isLoggedIn = localStorage.getItem("accessToken") !== null;
 
   if (!publicPaths.includes(to.path) && !isLoggedIn) {
     return "/";
