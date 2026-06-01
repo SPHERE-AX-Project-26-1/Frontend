@@ -87,18 +87,6 @@
           />
         </div>
 
-        <!-- 이메일 -->
-        <div class="mb-4">
-          <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">이메일 주소</label>
-          <input
-            id="email"
-            v-model="email"
-            type="email"
-            placeholder="이메일 주소를 입력해주세요"
-            class="w-full px-4 py-3.5 border border-gray-300 rounded-md text-sm outline-none transition focus:border-[#5b6fd6] bg-white"
-          />
-        </div>
-
         <!-- 버튼 -->
         <div class="flex justify-center gap-3 mt-7">
           <RouterLink
@@ -124,6 +112,7 @@
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import logo from '@/assets/logo.jpg'
+import { checkId, register } from '@/api/authApi'
 
 const router = useRouter()
 
@@ -131,7 +120,6 @@ const userId = ref('')
 const password = ref('')
 const passwordConfirm = ref('')
 const name = ref('')
-const email = ref('')
 
 const idCheckMessage = ref('')
 const idCheckResult = ref(false)
@@ -185,18 +173,18 @@ function checkDuplicate() {
     idCheckResult.value = false
     return
   }
-  let users = []
-  try { users = JSON.parse(localStorage.getItem('users') || '[]') } catch { users = [] }
-  if (users.some(u => u.userId === userId.value)) {
-    idCheckMessage.value = '사용할 수 없는 아이디입니다.'
-    idCheckResult.value = false
-  } else {
-    idCheckMessage.value = '사용 가능한 아이디입니다.'
-    idCheckResult.value = true
-  }
+  checkId(userId.value).then((response) => {
+    if (response.available) {
+      idCheckMessage.value = '사용 가능한 아이디입니다.'
+      idCheckResult.value = true
+    } else {
+      idCheckMessage.value = '사용할 수 없는 아이디입니다.'
+      idCheckResult.value = false
+    }
+  })
 }
 
-// 회원가입 처리 - 백엔드 연결 시 API로 교체 예정
+// 회원가입 처리 
 function handleRegister() {
   if (userId.value.length < 6 || userId.value.length > 20) {
     alert('아이디는 6-20자로 입력해주세요.')
@@ -214,13 +202,15 @@ function handleRegister() {
     alert('비밀번호가 일치하지 않습니다.')
     return
   }
-  if (!name.value || !email.value) {
-    alert('이름과 이메일을 입력해주세요.')
+  if (!name.value) {
+    alert('이름을 입력해주세요.')
     return
   }
-  const users = JSON.parse(localStorage.getItem('users') || '[]')
-  users.push({ userId: userId.value, password: password.value, name: name.value, email: email.value })
-  localStorage.setItem('users', JSON.stringify(users))
-  router.push('/')
+  register(userId.value, password.value, name.value).then(() => {
+    router.push('/')
+  }).catch(err => {
+    console.error(err)
+    alert(err.response?.data?.message || '회원가입에 실패했습니다.')
+  })
 }
 </script>

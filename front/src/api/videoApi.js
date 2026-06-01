@@ -1,0 +1,41 @@
+import apiClient from "./client";
+
+
+export const getVideoList = async (search, name, sortBy, page, pageSize) => {
+    const response = await apiClient.get("/videos?search=" + search + "&name=" + name + 
+        "&sortBy=" + sortBy + "&page=" + page + "&pageSize=" + pageSize);
+    return response.data;
+}
+
+
+export const getRegionNames = async () => {
+    const response = await apiClient.get("/videos/regions");
+    return response.data;
+}
+
+export const deleteVideos = async (ids) => {
+  const response = await apiClient.delete("/videos", {
+    data: { ids },
+  });
+
+  return response.data;
+};
+
+export const getVideoDetail = async (id) => {
+    const response = await apiClient.get(`/videos/${id}`);
+    return response.data;
+}
+
+
+export const uploadVideo = async ({ file, riverId, duration, date }) => {
+  const formData = new FormData();
+
+  formData.append("file", file);
+  formData.append("riverId", riverId);
+  formData.append("duration", duration);
+  formData.append("date", date);
+
+  const response = await apiClient.post("/videos/upload", formData);
+
+  return response.data;
+};

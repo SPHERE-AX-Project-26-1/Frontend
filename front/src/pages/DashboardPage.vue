@@ -42,7 +42,7 @@
                   {{ selectedRiver.name }}
                 </h3>
                 <p class="mt-1 text-sm text-slate-500">
-                  {{ selectedRiver.region }}
+                  {{ selectedRiver.address }}
                 </p>
               </div>
 
@@ -57,7 +57,7 @@
               <div class="rounded-2xl bg-[#F4FAFE] p-3">
                 <p class="text-xs text-slate-400">위치 정보</p>
                 <p class="mt-1 text-sm font-bold text-slate-700">
-                  {{ selectedRiver.gps }}
+                  {{ selectedRiver.latitude }}, {{ selectedRiver.longitude }}
                 </p>
               </div>
 
@@ -71,7 +71,7 @@
               <div class="rounded-2xl bg-[#F4FAFE] p-3">
                 <p class="text-xs text-slate-400">누적 검출 수</p>
                 <p class="mt-1 text-sm font-bold text-[#08243D]">
-                  {{ selectedRiver.detectCount }}마리
+                  {{ selectedRiver.totalSkygazerCount }}마리
                 </p>
               </div>
 
@@ -145,7 +145,7 @@
                     {{ formatShortDate(event.date) }}
                   </p>
                   <p class="mt-0.5 text-xs font-extrabold text-[#08243D]">
-                    {{ event.time }}
+                    {{ getTime(event.uploadTime) }}
                   </p>
                 </div>
 
@@ -165,7 +165,7 @@
                   <div class="flex items-start justify-between gap-2">
                     <div>
                       <h3 class="text-sm font-extrabold text-[#08243D]">
-                        {{ event.riverName }}
+                        {{ event.name }}
                       </h3>
 
                       <p
@@ -212,7 +212,7 @@
                       {{ river.name }}
                     </p>
                     <p class="text-xs text-slate-400">
-                      {{ river.detectCount }}마리 검출
+                      {{ river.totalSkygazerCount }}마리 검출
                     </p>
                   </div>
                 </div>
