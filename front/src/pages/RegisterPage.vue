@@ -112,7 +112,7 @@
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import logo from '@/assets/logo.jpg'
-import { checkId, register } from '@/api/auth'
+import { checkId, register } from '@/api/authApi'
 
 const router = useRouter()
 
@@ -184,7 +184,7 @@ function checkDuplicate() {
   })
 }
 
-// 회원가입 처리 - 백엔드 연결 시 API로 교체 예정
+// 회원가입 처리 
 function handleRegister() {
   if (userId.value.length < 6 || userId.value.length > 20) {
     alert('아이디는 6-20자로 입력해주세요.')
