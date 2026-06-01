@@ -50,6 +50,7 @@
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import logo from "../../assets/logo.jpg";
+import { logout } from "../../api/authApi";
 
 const route = useRoute();
 const router = useRouter();
@@ -61,8 +62,15 @@ try {
 const currentUser = ref(stored);
 
 function logout() {
-  localStorage.removeItem("currentUser");
-  router.push("/");
+  logout()
+    .then(() => {
+      localStorage.removeItem("accessToken");
+      router.push("/");
+    })
+    .catch((error) => {
+      console.error("Logout failed:", error);
+      alert("로그아웃에 실패했습니다. 다시 시도해주세요.");
+    });
 }
 
 const menus = [
