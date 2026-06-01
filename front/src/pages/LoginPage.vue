@@ -91,8 +91,8 @@ function handleLogin() {
   }
   login(userId.value, password.value)
     .then((response) => {
-      const token = response.token;
-      localStorage.setItem("accessToken", token);
+      localStorage.setItem("accessToken", response.token);
+      localStorage.setItem("currentUser", JSON.stringify(response.user));
       router.push("/app/dashboard");
     })
     .catch((err) => {
