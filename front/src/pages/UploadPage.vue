@@ -97,17 +97,30 @@
             <label class="block text-sm font-semibold text-slate-700 mb-2">
               분석 전 강 유역 선택
             </label>
+
             <select
               v-model="selectedRiverId"
-              class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-200">
-              <option disabled value="">유역을 선택해주세요</option>
+              class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-200"
+              :disabled="isRiverLoading">
+              <option disabled value="">
+                {{
+                  isRiverLoading
+                    ? "유역 목록을 불러오는 중..."
+                    : "유역을 선택해주세요"
+                }}
+              </option>
+
               <option
                 v-for="river in riverOptions"
                 :key="river.id"
                 :value="river.id">
-                {{ river.name }}
+                {{ river.name }} - {{ river.address }}
               </option>
             </select>
+
+            <p v-if="riverErrorMessage" class="mt-2 text-sm text-red-500">
+              {{ riverErrorMessage }}
+            </p>
           </div>
 
           <div>
@@ -197,7 +210,7 @@
         <div class="mt-8 flex justify-end">
           <button
             class="px-6 py-3 rounded-xl bg-sky-500 text-white font-semibold hover:bg-sky-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="!selectedRiverId || !selectedDate"
+            :disabled="!selectedRiverId || !selectedDate || isSubmitting"
             @click="startAnalysis">
             분석 시작
           </button>
@@ -347,7 +360,10 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from "vue";
+import axios from "axios";
+import { computed, onMounted, ref, watch } from "vue";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
 const step = ref(1); // 1: 드롭박스만 / 2: 정보확인 / 3: 분석 요청 후
 const selectedFile = ref(null);
@@ -360,16 +376,13 @@ const selectedDay = ref("");
 const progress = ref(0);
 const analysisStatus = ref("idle"); // idle | loading | success | failed
 const skygazerCount = ref(0); // 강준치 개체 수
+const analysisResultMessage = ref("");
 
-const riverListResponse = {
-  rivers: [
-    { id: 1, name: "낙동강 A-12", address: "대구 달성군" },
-    { id: 2, name: "금호강 K-03", address: "대구 북구" },
-    { id: 3, name: "신천 S-07", address: "대구 수성구" },
-  ],
-};
+const riverOptions = ref([]);
+const isRiverLoading = ref(false);
+const riverErrorMessage = ref("");
 
-const riverOptions = ref(riverListResponse.rivers);
+const isSubmitting = ref(false);
 
 const fileInfo = ref({
   name: "",
@@ -435,7 +448,9 @@ watch([selectedYear, selectedMonth], () => {
 });
 
 const selectedRiverInfo = computed(() => {
-  return riverOptions.value.find((river) => river.id === selectedRiverId.value);
+  return riverOptions.value.find(
+    (river) => Number(river.id) === Number(selectedRiverId.value),
+  );
 });
 
 const analysisTitle = computed(() => {
@@ -446,6 +461,10 @@ const analysisTitle = computed(() => {
 });
 
 const analysisMessage = computed(() => {
+  if (analysisResultMessage.value) {
+    return analysisResultMessage.value;
+  }
+
   if (analysisStatus.value === "loading") {
     return "영상 분석 요청이 접수되어 분석이 진행되고 있습니다.";
   }
@@ -520,6 +539,23 @@ const currentStatus = computed(() => {
   if (analysisStatus.value === "failed") return "분석 실패";
   return "-";
 });
+
+const fetchRivers = async () => {
+  isRiverLoading.value = true;
+  riverErrorMessage.value = "";
+
+  try {
+    const response = await axios.get(`${API_BASE_URL}/rivers/`);
+
+    riverOptions.value = response.data?.items || [];
+  } catch (error) {
+    console.error("유역 목록 조회 실패:", error);
+    riverErrorMessage.value = "유역 목록을 불러오지 못했습니다.";
+    riverOptions.value = [];
+  } finally {
+    isRiverLoading.value = false;
+  }
+};
 
 const formatFileSize = (bytes) => {
   if (!bytes) return "-";
@@ -611,6 +647,7 @@ const updateFileInfo = async (file) => {
   resetSelectedDate();
   progress.value = 0;
   analysisStatus.value = "idle";
+  analysisResultMessage.value = "";
   skygazerCount.value = 0;
   step.value = 2;
 };
@@ -643,6 +680,8 @@ const startAnalysis = async () => {
     return;
   }
 
+  const formData = new FormData();
+
   // API 명세서 기준:
   // {
   //   file: "File",
@@ -651,58 +690,71 @@ const startAnalysis = async () => {
   //   duration: 192
   // }
 
-  const formData = new FormData();
   formData.append("file", selectedFile.value);
   formData.append("riverId", selectedRiverId.value);
   formData.append("date", selectedDate.value);
   formData.append("duration", fileInfo.value.durationSeconds);
 
-  console.log("영상 분석 요청 FormData");
-  console.log("file:", selectedFile.value);
-  console.log("riverId:", selectedRiverId.value);
-  console.log("date:", selectedDate.value);
-  console.log("duration:", fileInfo.value.durationSeconds);
-
   step.value = 3;
   analysisStatus.value = "loading";
+  analysisResultMessage.value = "";
   progress.value = 0;
   skygazerCount.value = 0;
+  isSubmitting.value = true;
 
   const timer = startFakeProgress();
 
   try {
-    // TODO: 백엔드 연결 시 아래 부분 교체
-    // const response = await axios.post("/videos", formData, {
-    //   headers: {
-    //     "Content-Type": "multipart/form-data",
-    //   },
-    // });
-
-    // TODO: 임시 테스트용 코드
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-
-    const response = {
-      data: {
-        id: 12,
-        status: "COMPLETE",
-        skygazerCount: 12,
-        message: "영상 분석이 완료되었습니다.",
+    const response = await axios.post(`${API_BASE_URL}/videos/`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
       },
-    };
+    });
+
+    // 성공 응답:
+    // {
+    //   id: 12,
+    //   status: "COMPLETE",
+    //   skygazerCount: 12,
+    //   message: "영상 분석이 완료되었습니다."
+    // }
+    //
+    // 실패 응답:
+    // {
+    //   id: 12,
+    //   status: "FAIL",
+    //   message: "영상 분석에 실패했습니다."
+    // }
+
+    const result = response.data;
 
     clearInterval(timer);
-
     progress.value = 100;
-    analysisStatus.value =
-      response.data.status === "COMPLETE" ? "success" : "failed";
-    skygazerCount.value = response.data.skygazerCount || 0;
+
+    if (result.status === "COMPLETE") {
+      analysisStatus.value = "success";
+      skygazerCount.value = result.skygazerCount || 0;
+      analysisResultMessage.value =
+        result.message || "영상 분석이 완료되었습니다.";
+    } else {
+      analysisStatus.value = "failed";
+      skygazerCount.value = 0;
+      analysisResultMessage.value =
+        result.message || "영상 분석에 실패했습니다.";
+    }
   } catch (error) {
     clearInterval(timer);
 
     progress.value = 100;
     analysisStatus.value = "failed";
+    skygazerCount.value = 0;
+
+    analysisResultMessage.value =
+      error.response?.data?.message || "영상 분석 요청 중 오류가 발생했습니다.";
 
     console.error("영상 분석 요청 실패:", error);
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
@@ -713,7 +765,9 @@ const resetPage = () => {
   resetSelectedDate();
   progress.value = 0;
   analysisStatus.value = "idle";
+  analysisResultMessage.value = "";
   skygazerCount.value = 0;
+  isSubmitting.value = false;
 
   fileInfo.value = {
     name: "",
@@ -723,4 +777,8 @@ const resetPage = () => {
     durationSeconds: 0,
   };
 };
+
+onMounted(() => {
+  fetchRivers();
+});
 </script>

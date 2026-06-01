@@ -5,8 +5,9 @@
       <div class="ml-auto flex items-center gap-2">
         <label
           for="river-file-upload"
-          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
-          CSV/Excel 업로드
+          class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+          :class="isUploading ? 'opacity-60 pointer-events-none' : ''">
+          {{ isUploading ? "업로드 중..." : "CSV/Excel 업로드" }}
         </label>
 
         <input
@@ -36,6 +37,12 @@
               총 {{ filteredRivers.length }}개의 유역이 조회되었습니다.
             </p>
           </div>
+
+          <button
+            class="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-500 hover:bg-slate-50 transition"
+            @click="fetchRivers">
+            새로고침
+          </button>
         </div>
 
         <!-- 검색 / 필터 / 정렬 -->
@@ -68,14 +75,20 @@
           </select>
         </div>
 
+        <div
+          v-if="isLoading"
+          class="py-20 text-center text-sm font-semibold text-slate-400">
+          유역 목록을 불러오는 중입니다...
+        </div>
+
         <!-- 테이블 -->
-        <div class="overflow-hidden rounded-2xl border border-slate-100">
+        <div v-else class="overflow-hidden rounded-2xl border border-slate-100">
           <table class="w-full text-sm">
             <thead class="bg-[#F4FAFE] text-slate-500">
               <tr>
                 <th class="px-4 py-3 text-left font-bold">유역명</th>
                 <th class="px-4 py-3 text-left font-bold">지역</th>
-                <th class="px-4 py-3 text-left font-bold">GPS</th>
+                <th class="px-4 py-3 text-left font-bold">좌표</th>
                 <th class="px-4 py-3 text-left font-bold">위험도</th>
                 <th class="px-4 py-3 text-left font-bold">누적 탐지</th>
                 <th class="px-4 py-3 text-left font-bold">최근 분석일</th>
@@ -100,19 +113,20 @@
                 </td>
 
                 <td class="px-4 py-4 text-xs text-slate-500">
-                  {{ river.latitude }}, {{ river.longitude }}
+                  {{ formatCoordinate(river.latitude) }},
+                  {{ formatCoordinate(river.longitude) }}
                 </td>
 
                 <td class="px-4 py-4">
                   <span
                     class="rounded-full px-2.5 py-1 text-xs font-bold"
                     :class="getRiskBadge(river.risk)">
-                    {{ river.risk }}
+                    {{ river.risk || "-" }}
                   </span>
                 </td>
 
                 <td class="px-4 py-4 font-bold text-[#334E68]">
-                  {{ river.totalSkygazerCount }}마리
+                  {{ river.totalSkygazerCount ?? 0 }}마리
                 </td>
 
                 <td class="px-4 py-4 text-slate-500">
@@ -124,7 +138,7 @@
         </div>
 
         <div
-          v-if="filteredRivers.length === 0"
+          v-if="!isLoading && filteredRivers.length === 0"
           class="py-20 text-center text-sm text-slate-400">
           검색 결과가 없습니다.
         </div>
@@ -138,6 +152,12 @@
             <h2 class="text-xl font-extrabold text-[#08243D]">
               {{ isCreateMode ? "새 유역 등록" : "상세보기 및 편집" }}
             </h2>
+
+            <p
+              v-if="!isCreateMode && form.createdAt"
+              class="mt-1 text-xs text-slate-400">
+              등록일 {{ form.createdAt }}
+            </p>
           </div>
 
           <span
@@ -178,8 +198,9 @@
               </label>
               <input
                 v-model="form.latitude"
-                type="text"
-                placeholder="35.910"
+                type="number"
+                step="0.0001"
+                placeholder="35.9100"
                 class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-100" />
             </div>
 
@@ -189,30 +210,24 @@
               </label>
               <input
                 v-model="form.longitude"
-                type="text"
-                placeholder="128.584"
+                type="number"
+                step="0.0001"
+                placeholder="128.5840"
                 class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-100" />
             </div>
           </div>
 
-          <div>
+          <div v-if="!isCreateMode">
             <label class="block text-sm font-bold text-slate-600 mb-2">
               위험도
             </label>
 
-            <div class="grid grid-cols-3 rounded-xl bg-slate-100 p-1">
-              <button
-                v-for="risk in riskOptions"
-                :key="risk"
-                class="rounded-lg py-2 text-sm font-bold transition"
-                :class="
-                  form.risk === risk
-                    ? 'bg-white text-[#08243D] shadow-sm'
-                    : 'text-slate-400 hover:text-slate-600'
-                "
-                @click="form.risk = risk">
-                {{ risk }}
-              </button>
+            <div class="rounded-xl bg-slate-100 p-1">
+              <div
+                class="rounded-lg bg-white px-4 py-2 text-sm font-bold shadow-sm"
+                :class="getRiskTextColor(form.risk)">
+                {{ form.risk || "분석 전" }}
+              </div>
             </div>
           </div>
 
@@ -247,21 +262,21 @@
             <div>
               <p class="text-[11px] font-bold text-slate-400">분석 영상</p>
               <p class="mt-1 text-base font-extrabold text-[#08243D]">
-                {{ form.analysisCount }}개
+                {{ form.analysisCount ?? 0 }}개
               </p>
             </div>
 
             <div>
               <p class="text-[11px] font-bold text-slate-400">누적 탐지</p>
               <p class="mt-1 text-base font-extrabold text-[#08243D]">
-                {{ form.totalSkygazerCount }}마리
+                {{ form.totalSkygazerCount ?? 0 }}마리
               </p>
             </div>
 
             <div>
               <p class="text-[11px] font-bold text-slate-400">최근 탐지</p>
               <p class="mt-1 text-base font-extrabold text-[#08243D]">
-                {{ form.latestSkygazerCount }}마리
+                {{ form.latestSkygazerCount ?? 0 }}마리
               </p>
             </div>
           </div>
@@ -321,7 +336,7 @@
             <div
               class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
               <p class="text-sm font-extrabold text-[#08243D]">
-                지도 클릭으로 GPS 좌표 선택
+                지도 클릭으로 좌표 선택
               </p>
               <p class="mt-1 text-xs text-slate-500">
                 또는 위도/경도를 직접 입력할 수 있습니다.
@@ -332,7 +347,8 @@
           <div class="flex justify-between pt-2">
             <button
               v-if="!isCreateMode"
-              class="px-4 py-3 rounded-xl border border-red-100 bg-red-50 text-sm font-bold text-red-500 hover:bg-red-100 transition"
+              class="px-4 py-3 rounded-xl border border-red-100 bg-red-50 text-sm font-bold text-red-500 hover:bg-red-100 transition disabled:opacity-60"
+              :disabled="isSaving"
               @click="deleteRiver">
               삭제
             </button>
@@ -341,15 +357,17 @@
 
             <div class="flex gap-2">
               <button
-                class="px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-500 hover:bg-slate-50 transition"
+                class="px-4 py-3 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-500 hover:bg-slate-50 transition disabled:opacity-60"
+                :disabled="isSaving"
                 @click="resetForm">
                 초기화
               </button>
 
               <button
-                class="px-5 py-3 rounded-xl bg-[#08243D] text-sm font-bold text-white hover:bg-[#103A5D] transition"
+                class="px-5 py-3 rounded-xl bg-[#08243D] text-sm font-bold text-white hover:bg-[#103A5D] transition disabled:opacity-60"
+                :disabled="isSaving"
                 @click="saveRiver">
-                저장
+                {{ isSaving ? "저장 중..." : "저장" }}
               </button>
             </div>
           </div>
@@ -361,23 +379,16 @@
 
 <script setup>
 import { computed, onMounted, ref } from "vue";
-import { mockVideos } from "@/data/mockVideos";
 
-const riskOptions = ["보통", "주의", "위험"];
+const RIVER_API = "/api/rivers/";
+const RIVER_UPLOAD_API = "/api/rivers/upload";
 
 const RISK_STANDARD = {
   caution: 5,
   danger: 10,
 };
 
-const riverMapPosition = {
-  "낙동강 A-12": { mapX: 34, mapY: 55 },
-  "금호강 K-03": { mapX: 58, mapY: 43 },
-  "신천 S-07": { mapX: 48, mapY: 67 },
-  "낙동강 B-01": { mapX: 72, mapY: 48 },
-};
-
-const rivers = ref(createRiversFromMockVideos(mockVideos));
+const rivers = ref([]);
 
 const searchQuery = ref("");
 const filterRisk = ref("");
@@ -385,6 +396,10 @@ const sortBy = ref("recent");
 
 const selectedRiver = ref(null);
 const isCreateMode = ref(false);
+
+const isLoading = ref(false);
+const isSaving = ref(false);
+const isUploading = ref(false);
 
 const emptyForm = {
   id: null,
@@ -407,9 +422,7 @@ const emptyForm = {
 const form = ref({ ...emptyForm });
 
 onMounted(() => {
-  if (rivers.value.length > 0) {
-    selectRiver(rivers.value[0]);
-  }
+  fetchRivers();
 });
 
 const filteredRivers = computed(() => {
@@ -418,11 +431,12 @@ const filteredRivers = computed(() => {
   if (searchQuery.value.trim()) {
     const keyword = searchQuery.value.toLowerCase();
 
-    result = result.filter(
-      (river) =>
-        river.name.toLowerCase().includes(keyword) ||
-        river.address.toLowerCase().includes(keyword),
-    );
+    result = result.filter((river) => {
+      const name = river.name?.toLowerCase() ?? "";
+      const address = river.address?.toLowerCase() ?? "";
+
+      return name.includes(keyword) || address.includes(keyword);
+    });
   }
 
   if (filterRisk.value) {
@@ -430,91 +444,67 @@ const filteredRivers = computed(() => {
   }
 
   if (sortBy.value === "recent") {
-    result.sort((a, b) => b.lastAnalyzedAt.localeCompare(a.lastAnalyzedAt));
+    result.sort((a, b) => {
+      const dateA = a.lastAnalyzedAt || "";
+      const dateB = b.lastAnalyzedAt || "";
+      return dateB.localeCompare(dateA);
+    });
   } else if (sortBy.value === "name") {
-    result.sort((a, b) => a.name.localeCompare(b.name));
+    result.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   } else if (sortBy.value === "risk") {
     const order = { 위험: 3, 주의: 2, 보통: 1 };
-    result.sort((a, b) => order[b.risk] - order[a.risk]);
+    result.sort((a, b) => (order[b.risk] ?? 0) - (order[a.risk] ?? 0));
   } else if (sortBy.value === "count") {
-    result.sort((a, b) => b.totalSkygazerCount - a.totalSkygazerCount);
+    result.sort(
+      (a, b) => (b.totalSkygazerCount ?? 0) - (a.totalSkygazerCount ?? 0),
+    );
   }
 
   return result;
 });
 
-function createRiversFromMockVideos(videos) {
-  const grouped = videos.reduce((acc, video) => {
-    const key = video.region;
+async function fetchRivers() {
+  isLoading.value = true;
 
-    if (!acc[key]) {
-      const [latitude = "-", longitude = "-"] = video.gps
-        .split(",")
-        .map((item) => item.trim());
+  try {
+    const data = await requestApi(RIVER_API);
 
-      acc[key] = {
-        id: key,
-        name: video.region,
-        address: video.location,
-        latitude,
-        longitude,
-        videos: [],
-      };
+    rivers.value = normalizeRiverList(data?.items ?? []);
+
+    if (rivers.value.length > 0) {
+      await selectRiver(rivers.value[0]);
+    } else {
+      openCreateForm();
     }
-
-    acc[key].videos.push(video);
-    return acc;
-  }, {});
-
-  return Object.values(grouped).map((river, index) => {
-    const sortedVideos = [...river.videos].sort((a, b) =>
-      b.date.localeCompare(a.date),
-    );
-
-    const latestVideo = sortedVideos[0];
-
-    const totalSkygazerCount = river.videos.reduce(
-      (sum, video) => sum + video.skygazerCount,
-      0,
-    );
-
-    const latestSkygazerCount = latestVideo?.skygazerCount ?? 0;
-
-    const position = riverMapPosition[river.name] ?? {
-      mapX: 35 + index * 12,
-      mapY: 45 + index * 7,
-    };
-
-    return {
-      id: index + 1,
-      name: river.name,
-      address: river.address,
-      latitude: river.latitude,
-      longitude: river.longitude,
-      risk: getRiskByCount(latestSkygazerCount),
-      lastAnalyzedAt: latestVideo?.date ?? "-",
-      cautionThreshold: RISK_STANDARD.caution,
-      dangerThreshold: RISK_STANDARD.danger,
-      createdAt: latestVideo?.uploadDate ?? latestVideo?.date ?? "-",
-      mapX: position.mapX,
-      mapY: position.mapY,
-      analysisCount: river.videos.length,
-      totalSkygazerCount,
-      latestSkygazerCount,
-    };
-  });
+  } catch (error) {
+    console.error(error);
+    alert(error.message || "유역 목록을 불러오지 못했습니다.");
+  } finally {
+    isLoading.value = false;
+  }
 }
 
-function getRiskByCount(count) {
-  if (count >= RISK_STANDARD.danger) return "위험";
-  if (count >= RISK_STANDARD.caution) return "주의";
-  return "보통";
+async function fetchRiverDetail(id) {
+  const data = await requestApi(`${RIVER_API}${id}`);
+  return normalizeRiver(data);
 }
 
-function selectRiver(river) {
+async function selectRiver(river) {
   selectedRiver.value = river;
   isCreateMode.value = false;
-  form.value = { ...river };
+
+  try {
+    const detail = await fetchRiverDetail(river.id);
+    selectedRiver.value = detail;
+    form.value = { ...detail };
+  } catch (error) {
+    console.error(error);
+    form.value = { ...river };
+    alert(
+      error.message ||
+        "유역 상세 정보를 불러오지 못했습니다. 목록 정보로 표시합니다.",
+    );
+  }
 }
 
 function openCreateForm() {
@@ -522,9 +512,8 @@ function openCreateForm() {
   isCreateMode.value = true;
   form.value = {
     ...emptyForm,
-    id: Date.now(),
-    createdAt: getToday(),
-    lastAnalyzedAt: "-",
+    createdAt: "",
+    lastAnalyzedAt: "",
   };
 }
 
@@ -539,58 +528,105 @@ function resetForm() {
   }
 }
 
-function saveRiver() {
-  if (!form.value.name.trim() || !form.value.address.trim()) {
-    alert("유역명과 지역 정보를 입력해주세요.");
-    return;
-  }
+async function saveRiver() {
+  if (!validateForm()) return;
 
-  if (!form.value.latitude || !form.value.longitude) {
-    alert("GPS 좌표를 입력하거나 지도에서 위치를 선택해주세요.");
-    return;
-  }
+  isSaving.value = true;
 
-  if (isCreateMode.value) {
-    const newRiver = {
-      ...form.value,
-      id: Date.now(),
-      createdAt: getToday(),
-      lastAnalyzedAt: form.value.lastAnalyzedAt || "-",
-      analysisCount: form.value.analysisCount || 0,
-      totalSkygazerCount: form.value.totalSkygazerCount || 0,
-      latestSkygazerCount: form.value.latestSkygazerCount || 0,
-    };
+  const payload = {
+    name: form.value.name.trim(),
+    address: form.value.address.trim(),
+    latitude: Number(form.value.latitude),
+    longitude: Number(form.value.longitude),
+    cautionThreshold: Number(form.value.cautionThreshold),
+    dangerThreshold: Number(form.value.dangerThreshold),
+  };
 
-    rivers.value.unshift(newRiver);
-    selectRiver(newRiver);
-    alert("새 유역이 등록되었습니다.");
-    return;
-  }
+  console.log("SAVE RIVER REQUEST", {
+    url: isCreateMode.value ? RIVER_API : `${RIVER_API}${form.value.id}`,
+    method: isCreateMode.value ? "POST" : "PUT",
+    payload,
+  });
 
-  const index = rivers.value.findIndex((river) => river.id === form.value.id);
+  try {
+    if (isCreateMode.value) {
+      const created = await requestApi(RIVER_API, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
 
-  if (index !== -1) {
-    rivers.value[index] = { ...form.value };
-    selectedRiver.value = rivers.value[index];
+      const normalizedCreated = normalizeRiver(created);
+
+      await fetchRivers();
+
+      if (normalizedCreated.id) {
+        await selectRiver(normalizedCreated);
+      }
+
+      alert("새 유역이 등록되었습니다.");
+      return;
+    }
+
+    const updated = await requestApi(`${RIVER_API}${form.value.id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+
+    const normalizedUpdated = normalizeRiver(updated);
+
+    const index = rivers.value.findIndex(
+      (river) => river.id === normalizedUpdated.id,
+    );
+
+    if (index !== -1) {
+      rivers.value[index] = {
+        ...rivers.value[index],
+        ...normalizedUpdated,
+      };
+    }
+
+    selectedRiver.value = normalizedUpdated;
+    form.value = { ...normalizedUpdated };
+
     alert("유역 정보가 수정되었습니다.");
+  } catch (error) {
+    console.error(error);
+    alert(error.message || "유역 저장에 실패했습니다.");
+  } finally {
+    isSaving.value = false;
   }
 }
 
-function deleteRiver() {
+async function deleteRiver() {
   if (!selectedRiver.value) return;
 
   if (!confirm(`${selectedRiver.value.name} 유역을 삭제하시겠습니까?`)) {
     return;
   }
 
-  rivers.value = rivers.value.filter(
-    (river) => river.id !== selectedRiver.value.id,
-  );
+  isSaving.value = true;
 
-  if (rivers.value.length > 0) {
-    selectRiver(rivers.value[0]);
-  } else {
-    openCreateForm();
+  try {
+    const data = await requestApi(`${RIVER_API}${selectedRiver.value.id}`, {
+      method: "DELETE",
+    });
+
+    alert(data?.message || "유역이 삭제되었습니다.");
+
+    rivers.value = rivers.value.filter(
+      (river) => river.id !== selectedRiver.value.id,
+    );
+
+    if (rivers.value.length > 0) {
+      await selectRiver(rivers.value[0]);
+    } else {
+      openCreateForm();
+    }
+  } catch (error) {
+    console.error(error);
+    alert(error.message || "유역 삭제에 실패했습니다.");
+  } finally {
+    isSaving.value = false;
   }
 }
 
@@ -606,85 +642,237 @@ function handleMapClick(event) {
   const latitude = 36.2 - y * 0.006;
   const longitude = 128.25 + x * 0.006;
 
-  form.value.latitude = latitude.toFixed(3);
-  form.value.longitude = longitude.toFixed(3);
+  form.value.latitude = latitude.toFixed(4);
+  form.value.longitude = longitude.toFixed(4);
 }
 
-function handleBulkUpload(event) {
+async function handleBulkUpload(event) {
   const file = event.target.files?.[0];
   if (!file) return;
 
-  const extension = file.name.split(".").pop()?.toLowerCase();
+  isUploading.value = true;
 
-  if (extension !== "csv") {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const data = await requestApi(RIVER_UPLOAD_API, {
+      method: "POST",
+      body: formData,
+      isFormData: true,
+    });
+
+    const createdCount = data?.createdCount ?? 0;
+    const failedCount = data?.failedCount ?? 0;
+
     alert(
-      "현재 화면에서는 CSV 파일만 바로 반영됩니다. Excel 파일은 추후 백엔드 또는 xlsx 라이브러리 연동 후 처리할 수 있습니다.",
+      `파일 업로드가 완료되었습니다.\n등록 성공: ${createdCount}개\n등록 실패: ${failedCount}개`,
     );
+
+    await fetchRivers();
+  } catch (error) {
+    console.error(error);
+    alert(error.message || "유역 파일 업로드에 실패했습니다.");
+  } finally {
+    isUploading.value = false;
     event.target.value = "";
-    return;
   }
-
-  const reader = new FileReader();
-
-  reader.onload = () => {
-    const text = reader.result;
-    const rows = String(text)
-      .split(/\r?\n/)
-      .map((row) => row.trim())
-      .filter(Boolean);
-
-    const parsedRivers = rows
-      .slice(1)
-      .map((row, index) => {
-        const [name, address, latitude, longitude, risk] = row
-          .split(",")
-          .map((cell) => cell.trim());
-
-        if (!name || !address) return null;
-
-        return {
-          id: Date.now() + index,
-          name,
-          address,
-          latitude: latitude || "-",
-          longitude: longitude || "-",
-          risk: riskOptions.includes(risk) ? risk : "보통",
-          lastAnalyzedAt: "-",
-          cautionThreshold: RISK_STANDARD.caution,
-          dangerThreshold: RISK_STANDARD.danger,
-          createdAt: getToday(),
-          mapX: 40 + index * 6,
-          mapY: 45 + index * 4,
-          analysisCount: 0,
-          totalSkygazerCount: 0,
-          latestSkygazerCount: 0,
-        };
-      })
-      .filter(Boolean);
-
-    rivers.value = [...parsedRivers, ...rivers.value];
-
-    if (parsedRivers.length > 0) {
-      selectRiver(parsedRivers[0]);
-    }
-
-    alert(`${parsedRivers.length}개의 유역이 업로드되었습니다.`);
-  };
-
-  reader.readAsText(file, "UTF-8");
-  event.target.value = "";
 }
 
-function getToday() {
-  return new Date().toISOString().slice(0, 10);
+function validateForm() {
+  if (!form.value.name.trim() || !form.value.address.trim()) {
+    alert("유역명과 지역 정보를 입력해주세요.");
+    return false;
+  }
+
+  if (form.value.latitude === "" || form.value.longitude === "") {
+    alert("위도와 경도를 입력하거나 지도에서 위치를 선택해주세요.");
+    return false;
+  }
+
+  if (Number.isNaN(Number(form.value.latitude))) {
+    alert("위도는 숫자로 입력해주세요.");
+    return false;
+  }
+
+  if (Number.isNaN(Number(form.value.longitude))) {
+    alert("경도는 숫자로 입력해주세요.");
+    return false;
+  }
+
+  if (
+    form.value.cautionThreshold === "" ||
+    form.value.dangerThreshold === "" ||
+    Number.isNaN(Number(form.value.cautionThreshold)) ||
+    Number.isNaN(Number(form.value.dangerThreshold))
+  ) {
+    alert("주의 기준과 위험 기준을 숫자로 입력해주세요.");
+    return false;
+  }
+
+  if (
+    Number(form.value.cautionThreshold) > Number(form.value.dangerThreshold)
+  ) {
+    alert("주의 기준은 위험 기준보다 작거나 같아야 합니다.");
+    return false;
+  }
+
+  return true;
+}
+
+async function requestApi(url, options = {}) {
+  const { isFormData = false, ...fetchOptions } = options;
+
+  const headers = isFormData
+    ? {}
+    : {
+        "Content-Type": "application/json",
+      };
+
+  const response = await fetch(url, {
+    ...fetchOptions,
+    headers: {
+      ...headers,
+      ...(fetchOptions.headers || {}),
+    },
+  });
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  const contentType = response.headers.get("content-type") || "";
+  const isJson = contentType.includes("application/json");
+
+  let data = null;
+
+  try {
+    data = isJson ? await response.json() : await response.text();
+  } catch {
+    data = null;
+  }
+
+  if (!response.ok) {
+    console.error("API ERROR", {
+      url,
+      status: response.status,
+      data,
+    });
+
+    let message = `API 요청에 실패했습니다. status: ${response.status}`;
+
+    if (typeof data === "string" && data.trim()) {
+      message = data;
+    }
+
+    if (data && typeof data === "object") {
+      message =
+        data.message ||
+        data.detail ||
+        data.error ||
+        Object.entries(data)
+          .map(([key, value]) => {
+            if (Array.isArray(value)) {
+              return `${key}: ${value.join(", ")}`;
+            }
+
+            if (value && typeof value === "object") {
+              return `${key}: ${JSON.stringify(value)}`;
+            }
+
+            return `${key}: ${value}`;
+          })
+          .join("\n") ||
+        message;
+    }
+
+    throw new Error(message);
+  }
+
+  return data;
+}
+
+function normalizeRiverList(items) {
+  return items.map((item) => normalizeRiver(item));
+}
+
+function normalizeRiver(item) {
+  const latitude = item?.latitude ?? "";
+  const longitude = item?.longitude ?? "";
+
+  return {
+    id: item?.id,
+    name: item?.name ?? "",
+    address: item?.address ?? "",
+    latitude,
+    longitude,
+    risk: item?.risk ?? "보통",
+    lastAnalyzedAt: item?.lastAnalyzedAt ?? "",
+    cautionThreshold: item?.cautionThreshold ?? RISK_STANDARD.caution,
+    dangerThreshold: item?.dangerThreshold ?? RISK_STANDARD.danger,
+    createdAt: item?.createdAt ?? "",
+    analysisCount: item?.analysisCount ?? 0,
+    totalSkygazerCount: item?.totalSkygazerCount ?? 0,
+    latestSkygazerCount: item?.latestSkygazerCount ?? 0,
+    mapX: convertLongitudeToMapX(longitude),
+    mapY: convertLatitudeToMapY(latitude),
+  };
+}
+
+function convertLongitudeToMapX(longitude) {
+  const value = Number(longitude);
+  if (Number.isNaN(value)) return 50;
+
+  const minLng = 128.2;
+  const maxLng = 128.8;
+  const x = ((value - minLng) / (maxLng - minLng)) * 100;
+
+  return clamp(Number(x.toFixed(1)), 8, 92);
+}
+
+function convertLatitudeToMapY(latitude) {
+  const value = Number(latitude);
+  if (Number.isNaN(value)) return 50;
+
+  const minLat = 35.6;
+  const maxLat = 36.1;
+  const y = 100 - ((value - minLat) / (maxLat - minLat)) * 100;
+
+  return clamp(Number(y.toFixed(1)), 8, 92);
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function formatCoordinate(value) {
+  if (value === null || value === undefined || value === "") {
+    return "-";
+  }
+
+  const numberValue = Number(value);
+
+  if (Number.isNaN(numberValue)) {
+    return "-";
+  }
+
+  return numberValue.toFixed(4);
 }
 
 function getRiskBadge(risk) {
   if (risk === "위험") return "bg-red-100 text-red-500 border border-red-100";
+
   if (risk === "주의") {
     return "bg-amber-50 text-amber-600 border border-amber-100";
   }
+
   return "bg-emerald-50 text-emerald-600 border border-emerald-100";
+}
+
+function getRiskTextColor(risk) {
+  if (risk === "위험") return "text-red-500";
+  if (risk === "주의") return "text-amber-600";
+  return "text-emerald-600";
 }
 
 function getMarkerColor(risk) {
