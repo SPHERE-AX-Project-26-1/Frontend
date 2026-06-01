@@ -112,6 +112,7 @@
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import logo from '@/assets/logo.jpg'
+import { checkId, register } from '@/api/authApi'
 
 const router = useRouter()
 
@@ -172,18 +173,18 @@ function checkDuplicate() {
     idCheckResult.value = false
     return
   }
-  let users = []
-  try { users = JSON.parse(localStorage.getItem('users') || '[]') } catch { users = [] }
-  if (users.some(u => u.user_id === userId.value)) {
-    idCheckMessage.value = '사용할 수 없는 아이디입니다.'
-    idCheckResult.value = false
-  } else {
-    idCheckMessage.value = '사용 가능한 아이디입니다.'
-    idCheckResult.value = true
-  }
+  checkId(userId.value).then((response) => {
+    if (response.available) {
+      idCheckMessage.value = '사용 가능한 아이디입니다.'
+      idCheckResult.value = true
+    } else {
+      idCheckMessage.value = '사용할 수 없는 아이디입니다.'
+      idCheckResult.value = false
+    }
+  })
 }
 
-// 회원가입 처리 - 백엔드 연결 시 API로 교체 예정
+// 회원가입 처리 
 function handleRegister() {
   if (userId.value.length < 6 || userId.value.length > 20) {
     alert('아이디는 6-20자로 입력해주세요.')
@@ -205,9 +206,11 @@ function handleRegister() {
     alert('이름을 입력해주세요.')
     return
   }
-  const users = JSON.parse(localStorage.getItem('users') || '[]')
-  users.push({ user_id: userId.value, password: password.value, username: name.value })
-  localStorage.setItem('users', JSON.stringify(users))
-  router.push('/')
+  register(userId.value, password.value, name.value).then(() => {
+    router.push('/')
+  }).catch(err => {
+    console.error(err)
+    alert(err.response?.data?.message || '회원가입에 실패했습니다.')
+  })
 }
 </script>
