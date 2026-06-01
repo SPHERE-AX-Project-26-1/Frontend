@@ -114,6 +114,7 @@ const lineOptions = {
   scales: {
     y: {
       beginAtZero: true,
+      suggestedMax: 100,
       ticks: { callback: (val) => `${val}마리`, font: { size: 11 } },
       grid: { color: '#f0f0f0' }
     },
@@ -130,6 +131,8 @@ const horizontalBarOptions = {
   },
   scales: {
     x: {
+      beginAtZero: true,
+      suggestedMax: 100,
       ticks: { callback: (val) => `${val}마리`, font: { size: 11 } },
       grid: { color: '#f0f0f0' }
     },
@@ -146,6 +149,7 @@ const verticalBarOptions = {
   scales: {
     y: {
       beginAtZero: true,
+      suggestedMax: 100,
       ticks: { callback: (val) => `${val}마리`, font: { size: 11 } },
       grid: { color: '#f0f0f0' }
     },
@@ -219,4 +223,5 @@ onMounted(() => {
   fetchAll()
 })
 </script>
+
 
