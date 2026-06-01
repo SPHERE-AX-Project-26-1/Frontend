@@ -289,11 +289,11 @@ const rivers = computed(() => {
     const latestVideo = sortedVideos[0];
 
     const totalSkygazerCount = videos.reduce(
-      (sum, video) => sum + video.ganjunchiCount,
+      (sum, video) => sum + video.skygazerCount,
       0,
     );
 
-    const latestSkygazerCount = latestVideo?.ganjunchiCount ?? 0;
+    const latestSkygazerCount = latestVideo?.skygazerCount ?? 0;
 
     const risk = getRiskByCount(totalSkygazerCount);
     const coordinate = riverCoordinates[riverName];
@@ -331,7 +331,7 @@ const recentEvents = computed(() => {
     .sort((a, b) => b.uploadTime.localeCompare(a.uploadTime))
     .slice(0, 4)
     .map((video) => {
-      const skygazerCount = video.ganjunchiCount;
+      const skygazerCount = video.skygazerCount;
       const risk = getRiskByVideoCount(skygazerCount);
 
       return {
@@ -370,7 +370,7 @@ const statusItems = computed(() => {
   ).length;
 
   const totalSkygazerCount = mockVideos.reduce(
-    (sum, video) => sum + video.ganjunchiCount,
+    (sum, video) => sum + video.skygazerCount,
     0,
   );
 
