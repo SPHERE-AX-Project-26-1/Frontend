@@ -308,7 +308,7 @@ const topRivers = ref([]);
   GET /api/dashboard/rivers
 
   최근 분석 이벤트 조회:
-  GET /api/videos/recent
+  GET /api/videos/?sortBy=date_desc&page=1&pageSize=4
 
   검출 빈도 TOP3 조회:
   GET /api/dashboard/top-rivers
@@ -316,7 +316,7 @@ const topRivers = ref([]);
 const API = {
   summary: "/api/dashboard/summary",
   riverMarkers: "/api/dashboard/rivers",
-  recentEvents: "/api/videos?sortBy=date_desc&page=1&pageSize=4",
+  recentEvents: "/api/videos/?sortBy=date_desc&page=1&pageSize=4",
   topRivers: "/api/dashboard/top-rivers",
 };
 
@@ -477,7 +477,7 @@ function openRecordModal(river) {
   activeVideo.value = {
     id: river.latestVideoId,
     name: river.name,
-    region: river.name,
+    riverName: river.name,
     address: river.address,
     latitude: river.latitude,
     longitude: river.longitude,
