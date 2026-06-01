@@ -6,7 +6,7 @@
           <div class="bg-white border border-gray-200 rounded-md px-3 py-2">
             <select v-model="filterEventType" class="text-sm text-[#2c3e6b] bg-transparent outline-none cursor-pointer font-medium">
               <option value="">전체 이벤트</option>
-              <option v-for="type in eventTypes" :key="type" :value="type">{{ type }}</option>
+              <option v-for="type in eventTypes" :key="type" :value="type">{{ eventTypeLabel(type) }}</option>
             </select>
           </div>
           <button
@@ -37,7 +37,7 @@
               <td class="px-5 py-3.5 text-xs text-[#1e2d52] whitespace-nowrap">{{ log.datetime }}</td>
               <td class="px-5 py-3.5">
                 <span :class="badgeClass(log.eventType)" class="inline-block px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
-                  {{ log.eventType }}
+                  {{ eventTypeLabel(log.eventType) }}
                 </span>
               </td>
               <td class="px-5 py-3.5 text-sm text-[#1e2d52]">{{ log.detail }}</td>
@@ -50,44 +50,48 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { getSystemLogs } from '@/api/logApi'
 
 const filterEventType = ref('')
+const logs = ref([])
 
-// 목데이터 - 백엔드 연결 시 API로 교체
-const logs = [
-  { id: 1,  datetime: '2026-03-16 14:30', eventType: '파일 업로드',   detail: '낙동강A-12_2026-03-16.mp4 업로드 완료',       username: '사용자1' },
-  { id: 2,  datetime: '2026-03-16 14:45', eventType: '분석 완료',     detail: '낙동강A-12_2026-03-16 분석 완료',             username: '시스템' },
-  { id: 3,  datetime: '2026-03-16 15:00', eventType: '파일 다운로드', detail: '낙동강A-12_2026-03-16 데이터 다운로드',        username: '사용자3' },
-  { id: 4,  datetime: '2026-03-16 15:30', eventType: '로그인',        detail: '시스템 접속',                                 username: '사용자2' },
-  { id: 5,  datetime: '2026-03-16 16:10', eventType: '파일 업로드',   detail: '금호강K-03_2026-03-16.mp4 업로드 완료',       username: '사용자1' },
-  { id: 6,  datetime: '2026-03-16 16:25', eventType: '분석 완료',     detail: '금호강K-03_2026-03-16 분석 완료',             username: '시스템' },
-  { id: 7,  datetime: '2026-03-16 16:50', eventType: '영상 삭제',     detail: '신천S-07_2025-12-01.mp4 삭제',                username: '사용자1' },
-  { id: 8,  datetime: '2026-03-16 17:00', eventType: '로그아웃',      detail: '시스템 접속 종료',                            username: '사용자2' },
-  { id: 9,  datetime: '2026-03-15 09:10', eventType: '로그인',        detail: '시스템 접속',                                 username: '사용자1' },
-  { id: 10, datetime: '2026-03-15 09:30', eventType: '파일 업로드',   detail: '금호강K-03_2026-03-15.mp4 업로드 완료',       username: '사용자1' },
-  { id: 11, datetime: '2026-03-15 09:50', eventType: '분석 완료',     detail: '금호강K-03_2026-03-15 분석 완료',             username: '시스템' },
-  { id: 12, datetime: '2026-03-15 10:15', eventType: '파일 다운로드', detail: '금호강K-03_2026-03-15 데이터 다운로드',        username: '사용자3' },
-]
+onMounted(async () => {
+  const data = await getSystemLogs()
+  logs.value = data.items
+})
+
+const EVENT_LABEL = {
+  UPLOAD:   '파일 업로드',
+  ANALYSIS: '분석 완료',
+  DOWNLOAD: '파일 다운로드',
+  LOGIN:    '로그인',
+  LOGOUT:   '로그아웃',
+  DELETE:   '영상 삭제',
+}
+
+function eventTypeLabel(type) {
+  return EVENT_LABEL[type] ?? type
+}
 
 function badgeClass(eventType) {
   const map = {
-    '파일 업로드':   'bg-[#e8edf7] text-[#1e2d52]',
-    '분석 완료':     'bg-[#ddf0e8] text-[#2a7a56]',
-    '파일 다운로드': 'bg-[#e0f0fb] text-[#2980b9]',
-    '로그인':        'bg-[#ede8f5] text-[#6248a0]',
-    '로그아웃':      'bg-[#f0f3fa] text-[#7a8db3]',
-    '영상 삭제':     'bg-[#e6eaf4] text-[#3b4f82]',
+    UPLOAD:   'bg-[#e8edf7] text-[#1e2d52]',
+    ANALYSIS: 'bg-[#ddf0e8] text-[#2a7a56]',
+    DOWNLOAD: 'bg-[#e0f0fb] text-[#2980b9]',
+    LOGIN:    'bg-[#ede8f5] text-[#6248a0]',
+    LOGOUT:   'bg-[#f0f3fa] text-[#7a8db3]',
+    DELETE:   'bg-[#e6eaf4] text-[#3b4f82]',
   }
   return map[eventType] ?? 'bg-[#f0f3fa] text-[#7a8db3]'
 }
 
-const eventTypes = computed(() => [...new Set(logs.map(l => l.eventType))])
+const eventTypes = computed(() => [...new Set(logs.value.map(l => l.eventType))])
 
 const filteredLogs = computed(() =>
   filterEventType.value
-    ? logs.filter(l => l.eventType === filterEventType.value)
-    : logs
+    ? logs.value.filter(l => l.eventType === filterEventType.value)
+    : logs.value
 )
 
 function exportCSV() {
@@ -102,4 +106,6 @@ function exportCSV() {
   a.click()
   URL.revokeObjectURL(url)
 }
+
 </script>
+
