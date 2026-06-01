@@ -87,7 +87,7 @@
               <button
                 class="flex-1 rounded-2xl bg-[#08243D] py-3 text-sm font-bold text-white hover:bg-[#103A5D] transition"
                 @click.stop="openRecordModal(selectedRiver)">
-                자세히 보기
+                최근 분석 보기
               </button>
 
               <button
