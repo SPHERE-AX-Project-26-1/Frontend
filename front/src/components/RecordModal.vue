@@ -6,8 +6,8 @@
       <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-200">
         <div class="flex items-center gap-3">
           <span class="text-base font-bold text-gray-900">{{ video.filename }}</span>
-          <span :class="severityBadgeClass(video.ganjunchiCount)" class="text-xs font-bold px-2 py-0.5 rounded">
-            {{ getSeverity(video.ganjunchiCount) }}
+          <span :class="severityBadgeClass(video.skygazerCount)" class="text-xs font-bold px-2 py-0.5 rounded">
+            {{ getSeverity(video.skygazerCount) }}
           </span>
         </div>
         <button class="text-gray-400 hover:text-gray-600 cursor-pointer transition" @click="emit('close')">✕</button>
@@ -16,7 +16,7 @@
       <!-- 정보 태그 행 -->
       <div class="flex items-center gap-2 px-6 py-4 border-b border-gray-200 flex-wrap">
         <span class="border border-gray-300 rounded px-3 py-1 text-xs text-gray-600">{{ video.date }}</span>
-        <span class="border border-gray-300 rounded px-3 py-1 text-xs text-gray-600">{{ video.region }} · {{ video.location }}</span>
+        <span class="border border-gray-300 rounded px-3 py-1 text-xs text-gray-600">{{ video.name }}</span>
         <span class="border border-gray-300 rounded px-3 py-1 text-xs text-gray-600">{{ video.weather }} · 18°C</span>
         <span class="border border-gray-300 rounded px-3 py-1 text-xs text-gray-600">영상 길이 {{ video.duration }}</span>
       </div>
@@ -34,22 +34,19 @@
             <div class="relative">
               <svg width="160" height="160" viewBox="0 0 160 160">
                 <circle cx="80" cy="80" r="60" fill="none" stroke="#1e2d52" stroke-width="22"
-                  stroke-linecap="round"
-                  :stroke-dasharray="`${Math.max(0, getDonutDash(video.ganjunchiCount, video.totalCount) - 28)} ${CIRCUMFERENCE}`"
-                  :stroke-dashoffset="-14"
+                  :stroke-dasharray="`${Math.max(0, getDonutDash(video.skygazerCount, video.totalCount) - 4)} ${CIRCUMFERENCE}`"
+                  :stroke-dashoffset="-2"
                   transform="rotate(-90 80 80)"/>
-                <circle v-if="video.ganjunchiCount < video.totalCount"
+                <circle v-if="video.skygazerCount > 0 && video.skygazerCount < video.totalCount"
                   cx="80" cy="80" r="60" fill="none" stroke="#e0e4eb" stroke-width="22"
-                  stroke-linecap="round"
-                  :stroke-dasharray="`${Math.max(0, CIRCUMFERENCE - getDonutDash(video.ganjunchiCount, video.totalCount) - 28)} ${CIRCUMFERENCE}`"
-                  :stroke-dashoffset="-(getDonutDash(video.ganjunchiCount, video.totalCount) + 14)"
+                  :stroke-dasharray="`${Math.max(0, CIRCUMFERENCE - getDonutDash(video.skygazerCount, video.totalCount) - 4)} ${CIRCUMFERENCE}`"
+                  :stroke-dashoffset="-(getDonutDash(video.skygazerCount, video.totalCount) + 2)"
                   transform="rotate(-90 80 80)"/>
-                <circle v-if="video.ganjunchiCount === 0"
-                  cx="80" cy="80" r="60" fill="none" stroke="#e0e4eb" stroke-width="22"
-                  stroke-linecap="round"/>
+                <circle v-if="video.skygazerCount === 0"
+                  cx="80" cy="80" r="60" fill="none" stroke="#e0e4eb" stroke-width="22"/>
               </svg>
               <div class="absolute inset-0 flex flex-col items-center justify-center">
-                <span class="text-4xl font-bold text-gray-900">{{ video.ganjunchiCount }}</span>
+                <span class="text-4xl font-bold text-gray-900">{{ video.skygazerCount }}</span>
                 <span class="text-xs text-gray-500 mt-1">강준치</span>
               </div>
             </div>
@@ -62,14 +59,14 @@
                 <span class="w-3 h-3 rounded-full bg-[#1e2d52] shrink-0"></span>
                 <span class="text-sm font-bold text-gray-700">강준치</span>
               </div>
-              <span class="text-sm text-gray-800"><span class="font-bold">{{ video.ganjunchiCount }}</span> <span class="text-gray-500">마리</span></span>
+              <span class="text-sm text-gray-800"><span class="font-bold">{{ video.skygazerCount }}</span> <span class="text-gray-500">마리</span></span>
             </div>
             <div class="flex items-center justify-between py-2.5 px-4 border border-gray-200 rounded">
               <div class="flex items-center gap-2.5">
                 <span class="w-3 h-3 rounded-full bg-gray-300 shrink-0"></span>
                 <span class="text-sm text-gray-700">기타 어종</span>
               </div>
-              <span class="text-sm text-gray-800"><span class="font-bold">{{ video.totalCount - video.ganjunchiCount }}</span> <span class="text-gray-500">마리</span></span>
+              <span class="text-sm text-gray-800"><span class="font-bold">{{ video.totalCount - video.skygazerCount }}</span> <span class="text-gray-500">마리</span></span>
             </div>
             <div class="flex items-center justify-between py-2.5 px-4 border border-blue-200 bg-blue-50 rounded">
               <div class="flex items-center gap-2.5">
@@ -119,7 +116,7 @@
           <div class="grid grid-cols-[1fr_auto_1fr] items-end gap-2 mb-4">
             <div>
               <p class="text-xs text-gray-500 mb-1.5">이 영상</p>
-              <p class="text-2xl font-bold text-gray-900">{{ video.ganjunchiCount }}<span class="text-sm font-normal text-gray-500 ml-1">마리</span></p>
+              <p class="text-2xl font-bold text-gray-900">{{ video.skygazerCount }}<span class="text-sm font-normal text-gray-500 ml-1">마리</span></p>
             </div>
             <span class="text-xs text-gray-400 pb-1.5">vs</span>
             <div class="text-right">
@@ -128,11 +125,11 @@
             </div>
           </div>
           <div class="flex items-center gap-1.5 mb-3">
-            <div class="h-4 bg-[#1e2d52] rounded transition-all" :style="{ width: splitBarWidth(video.ganjunchiCount, card.avg) + '%' }"></div>
+            <div class="h-4 bg-[#1e2d52] rounded transition-all" :style="{ width: splitBarWidth(video.skygazerCount, card.avg) + '%' }"></div>
             <div class="h-4 bg-gray-200 rounded flex-1 transition-all"></div>
           </div>
-          <span v-if="video.ganjunchiCount > card.avg" class="text-xs text-red-500 font-medium">
-            ▲ {{ card.label }}보다 {{ percentAbove(video.ganjunchiCount, card.avg) }}% 많음
+          <span v-if="video.skygazerCount > card.avg" class="text-xs text-red-500 font-medium">
+            ▲ {{ card.label }}보다 {{ percentAbove(video.skygazerCount, card.avg) }}% 많음
           </span>
           <span v-else class="text-xs text-green-500 font-medium">
             ✓ {{ card.label }} 이하입니다
@@ -159,14 +156,14 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const compareCards = computed(() => [
-  { title: '유역 평균 대비', desc: `${props.video.region} 평균 강준치 발견 수와 비교`, label: '유역 평균', avg: props.video.regionAvg },
+  { title: '유역 평균 대비', desc: `${props.video.name} 평균 강준치 발견 수와 비교`, label: '유역 평균', avg: props.video.nameAvg },
   { title: '올해 평균 대비', desc: '2026년 전체 영상 평균 발견 개체 수와 비교',          label: '올해 평균', avg: props.video.yearAvg  },
 ])
 
 function getSeverity(count) {
   if (count >= 10) return '위험'
   if (count >= 5)  return '주의'
-  return '정상'
+  return '보통'
 }
 
 function severityBadgeClass(count) {
@@ -188,8 +185,9 @@ function splitBarWidth(value, other) {
 }
 
 const CIRCUMFERENCE = 2 * Math.PI * 60
-function getDonutDash(ganjunchi, total) {
+function getDonutDash(skygazer, total) {
   if (total === 0) return 0
-  return (ganjunchi / total) * CIRCUMFERENCE
+  return (skygazer / total) * CIRCUMFERENCE
 }
 </script>
+

@@ -21,7 +21,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="파일명으로 검색..."
+            placeholder="유역명으로 검색..."
             class="flex-1 outline-none text-sm text-gray-600 bg-transparent placeholder-gray-400"
           />
         </div>
@@ -95,18 +95,18 @@
           <div class="px-3.5 pt-3 pb-2 border-b border-gray-100">
             <div class="text-xs text-gray-400 mb-0.5">업로드 {{ video.uploadDate }}</div>
             <div class="text-base text-gray-600 font-bold truncate">{{ video.filename }}</div>
-            <div class="text-xs text-gray-400 mt-1">{{ video.date }} · {{ video.region }}</div>
+            <div class="text-xs text-gray-400 mt-1">{{ video.date }} · {{ video.name }}</div>
           </div>
 
           <!-- 썸네일 -->
           <div class="relative bg-gray-100 h-36 flex items-center justify-center">
             <span class="text-3xl text-gray-300">▶</span>
             <span
-              v-if="getSeverity(video.ganjunchiCount) !== '정상'"
-              :class="getSeverity(video.ganjunchiCount) === '위험' ? 'bg-red-500' : 'bg-yellow-400'"
+              v-if="getSeverity(video.skygazerCount) !== '보통'"
+              :class="getSeverity(video.skygazerCount) === '위험' ? 'bg-red-500' : 'bg-yellow-400'"
               class="absolute top-2 right-2 text-white text-xs font-bold px-2 py-0.5 rounded-full"
             >
-              ⚠ {{ getSeverity(video.ganjunchiCount) }}
+              ⚠ {{ getSeverity(video.skygazerCount) }}
             </span>
             <div
               v-if="isDeleteMode"
@@ -124,8 +124,8 @@
           <div class="px-3.5 py-2.5 flex items-center gap-2 text-sm">
             <div class="flex items-center gap-2 bg-blue-50 px-2 py-1 rounded-md">
               <span class="text-gray-500">강준치</span>
-              <span :class="getSeverity(video.ganjunchiCount) === '위험' ? 'text-red-500' : getSeverity(video.ganjunchiCount) === '주의' ? 'text-yellow-500' : 'text-gray-700'"
-                class="font-bold">{{ video.ganjunchiCount }}마리</span>
+              <span :class="getSeverity(video.skygazerCount) === '위험' ? 'text-red-500' : getSeverity(video.skygazerCount) === '주의' ? 'text-yellow-500' : 'text-gray-700'"
+                class="font-bold">{{ video.skygazerCount }}마리</span>
             </div>
             <span class="text-gray-300">/</span>
             <span class="text-gray-500">총 개체</span>
@@ -162,22 +162,22 @@ import RecordModal from '../components/RecordModal.vue'
 
 // 목데이터 - 백엔드 연결 시 API로 교체
 const videos = ref([
-  { id: 1,  filename: '낙동강A-12_2026-03-15.mp4', date: '2026-03-15', uploadDate: '2026-03-15', uploadTime: '2026-03-15 14:32', region: '낙동강 A-12', location: '대구 북구',  gps: '35.910, 128.584', ganjunchiCount: 12, totalCount: 23, weather: '맑음', duration: '3분 42초', detectionRanges: [{ range: '0:32 ~ 0:45', count: 2 }, { range: '1:10 ~ 1:25', count: 3 }, { range: '2:35 ~ 2:48', count: 2 }, { range: '3:15 ~ 3:28', count: 2 }, { range: '4:50 ~ 5:02', count: 1 }, { range: '6:05 ~ 6:18', count: 2 }], regionAvg: 8,  yearAvg: 6,  uploader: '사용자1' },
-  { id: 2,  filename: '금호강K-03_2026-03-14.mp4', date: '2026-03-14', uploadDate: '2026-03-15', uploadTime: '2026-03-15 09:10', region: '금호강 K-03', location: '대구 동구',  gps: '35.886, 128.650', ganjunchiCount: 7,  totalCount: 15, weather: '흐림', duration: '2분 58초', detectionRanges: [{ range: '1:00 ~ 1:15', count: 3 }, { range: '3:15 ~ 3:28', count: 2 }, { range: '5:38 ~ 5:50', count: 2 }], regionAvg: 5, yearAvg: 4, uploader: '사용자2' },
-  { id: 3,  filename: '신천S-07_2026-03-12.mp4',   date: '2026-03-12', uploadDate: '2026-03-13', uploadTime: '2026-03-13 11:25', region: '신천 S-07',   location: '대구 수성구', gps: '35.851, 128.626', ganjunchiCount: 2,  totalCount: 9,  weather: '맑음', duration: '4분 10초', detectionRanges: [{ range: '2:25 ~ 2:38', count: 1 }, { range: '7:10 ~ 7:22', count: 1 }], regionAvg: 3, yearAvg: 3, uploader: '사용자3' },
-  { id: 4,  filename: '낙동강B-01_2026-03-10.mp4', date: '2026-03-10', uploadDate: '2026-03-11', uploadTime: '2026-03-11 08:50', region: '낙동강 B-01', location: '구미',       gps: '36.132, 128.337', ganjunchiCount: 0,  totalCount: 4,  weather: '비',   duration: '3분 05초', detectionRanges: [], regionAvg: 4, yearAvg: 5, uploader: '사용자1' },
-  { id: 5,  filename: '낙동강A-12_2026-03-08.mp4', date: '2026-03-08', uploadDate: '2026-03-09', uploadTime: '2026-03-09 16:44', region: '낙동강 A-12', location: '대구 북구',  gps: '35.910, 128.584', ganjunchiCount: 15, totalCount: 31, weather: '맑음', duration: '5분 22초', detectionRanges: [{ range: '0:10 ~ 0:22', count: 2 }, { range: '0:50 ~ 1:02', count: 2 }, { range: '2:25 ~ 2:40', count: 3 }, { range: '3:40 ~ 3:52', count: 2 }, { range: '4:15 ~ 4:28', count: 2 }, { range: '5:00 ~ 5:10', count: 2 }, { range: '6:28 ~ 6:40', count: 2 }], regionAvg: 8, yearAvg: 6, uploader: '사용자1' },
-  { id: 6,  filename: '금호강K-03_2026-03-06.mp4', date: '2026-03-06', uploadDate: '2026-03-07', uploadTime: '2026-03-07 10:30', region: '금호강 K-03', location: '대구 동구',  gps: '35.886, 128.650', ganjunchiCount: 5,  totalCount: 18, weather: '흐림', duration: '3분 18초', detectionRanges: [{ range: '1:38 ~ 1:50', count: 2 }, { range: '4:05 ~ 4:18', count: 2 }, { range: '6:50 ~ 7:02', count: 1 }], regionAvg: 5, yearAvg: 4, uploader: '사용자2' },
-  { id: 7,  filename: '신천S-07_2026-03-04.mp4',   date: '2026-03-04', uploadDate: '2026-03-05', uploadTime: '2026-03-05 13:15', region: '신천 S-07',   location: '대구 수성구', gps: '35.851, 128.626', ganjunchiCount: 1,  totalCount: 7,  weather: '맑음', duration: '2분 44초', detectionRanges: [{ range: '3:18 ~ 3:30', count: 1 }], regionAvg: 3, yearAvg: 3, uploader: '사용자3' },
-  { id: 8,  filename: '낙동강B-01_2026-03-02.mp4', date: '2026-03-02', uploadDate: '2026-03-03', uploadTime: '2026-03-03 09:05', region: '낙동강 B-01', location: '구미',       gps: '36.132, 128.337', ganjunchiCount: 9,  totalCount: 20, weather: '눈',   duration: '4분 30초', detectionRanges: [{ range: '0:40 ~ 0:55', count: 3 }, { range: '2:05 ~ 2:18', count: 2 }, { range: '4:25 ~ 4:38', count: 2 }, { range: '5:55 ~ 6:08', count: 2 }], regionAvg: 4, yearAvg: 5, uploader: '사용자1' },
-  { id: 9,  filename: '낙동강A-12_2026-02-28.mp4', date: '2026-02-28', uploadDate: '2026-03-01', uploadTime: '2026-03-01 15:20', region: '낙동강 A-12', location: '대구 북구',  gps: '35.910, 128.584', ganjunchiCount: 6,  totalCount: 14, weather: '흐림', duration: '3분 55초', detectionRanges: [{ range: '1:15 ~ 1:28', count: 2 }, { range: '3:45 ~ 3:58', count: 2 }, { range: '5:25 ~ 5:38', count: 2 }], regionAvg: 8, yearAvg: 6, uploader: '사용자1' },
-  { id: 10, filename: '금호강K-03_2026-02-25.mp4', date: '2026-02-25', uploadDate: '2026-02-26', uploadTime: '2026-02-26 11:40', region: '금호강 K-03', location: '대구 동구',  gps: '35.886, 128.650', ganjunchiCount: 11, totalCount: 22, weather: '맑음', duration: '4분 02초', detectionRanges: [{ range: '0:15 ~ 0:28', count: 2 }, { range: '1:50 ~ 2:02', count: 3 }, { range: '3:05 ~ 3:18', count: 2 }, { range: '4:35 ~ 4:48', count: 2 }, { range: '6:00 ~ 6:12', count: 2 }], regionAvg: 5, yearAvg: 4, uploader: '사용자2' },
-  { id: 11, filename: '신천S-07_2026-02-22.mp4',   date: '2026-02-22', uploadDate: '2026-02-23', uploadTime: '2026-02-23 14:00', region: '신천 S-07',   location: '대구 수성구', gps: '35.851, 128.626', ganjunchiCount: 3,  totalCount: 11, weather: '비',   duration: '5분 15초', detectionRanges: [{ range: '4:05 ~ 4:18', count: 2 }, { range: '8:25 ~ 8:38', count: 1 }], regionAvg: 3, yearAvg: 3, uploader: '사용자3' },
-  { id: 12, filename: '낙동강B-01_2026-02-20.mp4', date: '2026-02-20', uploadDate: '2026-02-21', uploadTime: '2026-02-21 08:30', region: '낙동강 B-01', location: '구미',       gps: '36.132, 128.337', ganjunchiCount: 4,  totalCount: 13, weather: '맑음', duration: '3분 28초', detectionRanges: [{ range: '2:10 ~ 2:22', count: 2 }, { range: '5:40 ~ 5:52', count: 2 }], regionAvg: 4, yearAvg: 5, uploader: '사용자1' },
-  { id: 13, filename: '낙동강A-12_2026-02-17.mp4', date: '2026-02-17', uploadDate: '2026-02-18', uploadTime: '2026-02-18 10:55', region: '낙동강 A-12', location: '대구 북구',  gps: '35.910, 128.584', ganjunchiCount: 8,  totalCount: 19, weather: '눈',   duration: '4분 48초', detectionRanges: [{ range: '0:45 ~ 0:58', count: 2 }, { range: '2:15 ~ 2:28', count: 2 }, { range: '3:55 ~ 4:08', count: 2 }, { range: '5:50 ~ 6:02', count: 2 }], regionAvg: 8, yearAvg: 6, uploader: '사용자1' },
-  { id: 14, filename: '금호강K-03_2026-02-14.mp4', date: '2026-02-14', uploadDate: '2026-02-15', uploadTime: '2026-02-15 09:20', region: '금호강 K-03', location: '대구 동구',  gps: '35.886, 128.650', ganjunchiCount: 0,  totalCount: 6,  weather: '맑음', duration: '2분 30초', detectionRanges: [], regionAvg: 5, yearAvg: 4, uploader: '사용자2' },
-  { id: 15, filename: '신천S-07_2026-02-11.mp4',   date: '2026-02-11', uploadDate: '2026-02-12', uploadTime: '2026-02-12 13:45', region: '신천 S-07',   location: '대구 수성구', gps: '35.851, 128.626', ganjunchiCount: 13, totalCount: 25, weather: '흐림', duration: '6분 00초', detectionRanges: [{ range: '0:25 ~ 0:38', count: 2 }, { range: '1:05 ~ 1:18', count: 3 }, { range: '2:45 ~ 2:58', count: 2 }, { range: '4:10 ~ 4:22', count: 2 }, { range: '5:35 ~ 5:48', count: 2 }, { range: '6:55 ~ 7:08', count: 2 }], regionAvg: 3, yearAvg: 3, uploader: '사용자3' },
-  { id: 16, filename: '낙동강B-01_2026-02-08.mp4', date: '2026-02-08', uploadDate: '2026-02-09', uploadTime: '2026-02-09 07:55', region: '낙동강 B-01', location: '구미',       gps: '36.132, 128.337', ganjunchiCount: 2,  totalCount: 8,  weather: '맑음', duration: '3분 12초', detectionRanges: [{ range: '3:35 ~ 3:48', count: 2 }], regionAvg: 4, yearAvg: 5, uploader: '사용자1' },
+  { id: 1,  filename: '낙동강A-12_2026-03-15.mp4', date: '2026-03-15', uploadDate: '2026-03-15', uploadTime: '2026-03-15 14:32', name: '낙동강 A-12', latitude: 35.910, longitude: 128.584, skygazerCount: 12, totalCount: 23, weather: '맑음', duration: '3분 42초', detectionRanges: [{ range: '0:32 ~ 0:45', count: 2 }, { range: '1:10 ~ 1:25', count: 3 }, { range: '2:35 ~ 2:48', count: 2 }, { range: '3:15 ~ 3:28', count: 2 }, { range: '4:50 ~ 5:02', count: 1 }, { range: '6:05 ~ 6:18', count: 2 }], regionAvg: 8,  yearAvg: 6,  uploader: '사용자1' },
+  { id: 2,  filename: '금호강K-03_2026-03-14.mp4', date: '2026-03-14', uploadDate: '2026-03-15', uploadTime: '2026-03-15 09:10', name: '금호강 K-03', latitude: 35.886, longitude: 128.650, skygazerCount: 7,  totalCount: 15, weather: '흐림', duration: '2분 58초', detectionRanges: [{ range: '1:00 ~ 1:15', count: 3 }, { range: '3:15 ~ 3:28', count: 2 }, { range: '5:38 ~ 5:50', count: 2 }], regionAvg: 5, yearAvg: 4, uploader: '사용자2' },
+  { id: 3,  filename: '신천S-07_2026-03-12.mp4',   date: '2026-03-12', uploadDate: '2026-03-13', uploadTime: '2026-03-13 11:25', name: '신천 S-07',   latitude: 35.851, longitude: 128.626, skygazerCount: 2,  totalCount: 9,  weather: '맑음', duration: '4분 10초', detectionRanges: [{ range: '2:25 ~ 2:38', count: 1 }, { range: '7:10 ~ 7:22', count: 1 }], regionAvg: 3, yearAvg: 3, uploader: '사용자3' },
+  { id: 4,  filename: '낙동강B-01_2026-03-10.mp4', date: '2026-03-10', uploadDate: '2026-03-11', uploadTime: '2026-03-11 08:50', name: '낙동강 B-01', latitude: 36.132, longitude: 128.337, skygazerCount: 0,  totalCount: 4,  weather: '비',   duration: '3분 05초', detectionRanges: [], regionAvg: 4, yearAvg: 5, uploader: '사용자1' },
+  { id: 5,  filename: '낙동강A-12_2026-03-08.mp4', date: '2026-03-08', uploadDate: '2026-03-09', uploadTime: '2026-03-09 16:44', name: '낙동강 A-12', latitude: 35.910, longitude: 128.584, skygazerCount: 15, totalCount: 31, weather: '맑음', duration: '5분 22초', detectionRanges: [{ range: '0:10 ~ 0:22', count: 2 }, { range: '0:50 ~ 1:02', count: 2 }, { range: '2:25 ~ 2:40', count: 3 }, { range: '3:40 ~ 3:52', count: 2 }, { range: '4:15 ~ 4:28', count: 2 }, { range: '5:00 ~ 5:10', count: 2 }, { range: '6:28 ~ 6:40', count: 2 }], regionAvg: 8, yearAvg: 6, uploader: '사용자1' },
+  { id: 6,  filename: '금호강K-03_2026-03-06.mp4', date: '2026-03-06', uploadDate: '2026-03-07', uploadTime: '2026-03-07 10:30', name: '금호강 K-03', latitude: 35.886, longitude: 128.650, skygazerCount: 5,  totalCount: 18, weather: '흐림', duration: '3분 18초', detectionRanges: [{ range: '1:38 ~ 1:50', count: 2 }, { range: '4:05 ~ 4:18', count: 2 }, { range: '6:50 ~ 7:02', count: 1 }], regionAvg: 5, yearAvg: 4, uploader: '사용자2' },
+  { id: 7,  filename: '신천S-07_2026-03-04.mp4',   date: '2026-03-04', uploadDate: '2026-03-05', uploadTime: '2026-03-05 13:15', name: '신천 S-07',   latitude: 35.851, longitude: 128.626, skygazerCount: 1,  totalCount: 7,  weather: '맑음', duration: '2분 44초', detectionRanges: [{ range: '3:18 ~ 3:30', count: 1 }], regionAvg: 3, yearAvg: 3, uploader: '사용자3' },
+  { id: 8,  filename: '낙동강B-01_2026-03-02.mp4', date: '2026-03-02', uploadDate: '2026-03-03', uploadTime: '2026-03-03 09:05', name: '낙동강 B-01', latitude: 36.132, longitude: 128.337, skygazerCount: 9,  totalCount: 20, weather: '눈',   duration: '4분 30초', detectionRanges: [{ range: '0:40 ~ 0:55', count: 3 }, { range: '2:05 ~ 2:18', count: 2 }, { range: '4:25 ~ 4:38', count: 2 }, { range: '5:55 ~ 6:08', count: 2 }], regionAvg: 4, yearAvg: 5, uploader: '사용자1' },
+  { id: 9,  filename: '낙동강A-12_2026-02-28.mp4', date: '2026-02-28', uploadDate: '2026-03-01', uploadTime: '2026-03-01 15:20', name: '낙동강 A-12', latitude: 35.910, longitude: 128.584, skygazerCount: 6,  totalCount: 14, weather: '흐림', duration: '3분 55초', detectionRanges: [{ range: '1:15 ~ 1:28', count: 2 }, { range: '3:45 ~ 3:58', count: 2 }, { range: '5:25 ~ 5:38', count: 2 }], regionAvg: 8, yearAvg: 6, uploader: '사용자1' },
+  { id: 10, filename: '금호강K-03_2026-02-25.mp4', date: '2026-02-25', uploadDate: '2026-02-26', uploadTime: '2026-02-26 11:40', name: '금호강 K-03', latitude: 35.886, longitude: 128.650, skygazerCount: 11, totalCount: 22, weather: '맑음', duration: '4분 02초', detectionRanges: [{ range: '0:15 ~ 0:28', count: 2 }, { range: '1:50 ~ 2:02', count: 3 }, { range: '3:05 ~ 3:18', count: 2 }, { range: '4:35 ~ 4:48', count: 2 }, { range: '6:00 ~ 6:12', count: 2 }], regionAvg: 5, yearAvg: 4, uploader: '사용자2' },
+  { id: 11, filename: '신천S-07_2026-02-22.mp4',   date: '2026-02-22', uploadDate: '2026-02-23', uploadTime: '2026-02-23 14:00', name: '신천 S-07',   latitude: 35.851, longitude: 128.626, skygazerCount: 3,  totalCount: 11, weather: '비',   duration: '5분 15초', detectionRanges: [{ range: '4:05 ~ 4:18', count: 2 }, { range: '8:25 ~ 8:38', count: 1 }], regionAvg: 3, yearAvg: 3, uploader: '사용자3' },
+  { id: 12, filename: '낙동강B-01_2026-02-20.mp4', date: '2026-02-20', uploadDate: '2026-02-21', uploadTime: '2026-02-21 08:30', name: '낙동강 B-01', latitude: 36.132, longitude: 128.337, skygazerCount: 4,  totalCount: 13, weather: '맑음', duration: '3분 28초', detectionRanges: [{ range: '2:10 ~ 2:22', count: 2 }, { range: '5:40 ~ 5:52', count: 2 }], regionAvg: 4, yearAvg: 5, uploader: '사용자1' },
+  { id: 13, filename: '낙동강A-12_2026-02-17.mp4', date: '2026-02-17', uploadDate: '2026-02-18', uploadTime: '2026-02-18 10:55', name: '낙동강 A-12', latitude: 35.910, longitude: 128.584, skygazerCount: 8,  totalCount: 19, weather: '눈',   duration: '4분 48초', detectionRanges: [{ range: '0:45 ~ 0:58', count: 2 }, { range: '2:15 ~ 2:28', count: 2 }, { range: '3:55 ~ 4:08', count: 2 }, { range: '5:50 ~ 6:02', count: 2 }], regionAvg: 8, yearAvg: 6, uploader: '사용자1' },
+  { id: 14, filename: '금호강K-03_2026-02-14.mp4', date: '2026-02-14', uploadDate: '2026-02-15', uploadTime: '2026-02-15 09:20', name: '금호강 K-03', latitude: 35.886, longitude: 128.650, skygazerCount: 0,  totalCount: 6,  weather: '맑음', duration: '2분 30초', detectionRanges: [], regionAvg: 5, yearAvg: 4, uploader: '사용자2' },
+  { id: 15, filename: '신천S-07_2026-02-11.mp4',   date: '2026-02-11', uploadDate: '2026-02-12', uploadTime: '2026-02-12 13:45', name: '신천 S-07',   latitude: 35.851, longitude: 128.626, skygazerCount: 13, totalCount: 25, weather: '흐림', duration: '6분 00초', detectionRanges: [{ range: '0:25 ~ 0:38', count: 2 }, { range: '1:05 ~ 1:18', count: 3 }, { range: '2:45 ~ 2:58', count: 2 }, { range: '4:10 ~ 4:22', count: 2 }, { range: '5:35 ~ 5:48', count: 2 }, { range: '6:55 ~ 7:08', count: 2 }], regionAvg: 3, yearAvg: 3, uploader: '사용자3' },
+  { id: 16, filename: '낙동강B-01_2026-02-08.mp4', date: '2026-02-08', uploadDate: '2026-02-09', uploadTime: '2026-02-09 07:55', name: '낙동강 B-01', latitude: 36.132, longitude: 128.337, skygazerCount: 2,  totalCount: 8,  weather: '맑음', duration: '3분 12초', detectionRanges: [{ range: '3:35 ~ 3:48', count: 2 }], regionAvg: 4, yearAvg: 5, uploader: '사용자1' },
 ])
 
 const searchQuery  = ref('')
@@ -188,12 +188,12 @@ const selectedIds  = ref([])
 const showModal    = ref(false)
 const activeVideo  = ref(null)
 
-const regions = computed(() => [...new Set(videos.value.map(v => v.region))])
+const regions = computed(() => [...new Set(videos.value.map(v => v.name))])
 
 function getSeverity(count) {
   if (count >= 10) return '위험'
   if (count >= 5)  return '주의'
-  return '정상'
+  return '보통'
 }
 
 
@@ -201,8 +201,8 @@ function getSeverity(count) {
 
 const filteredVideos = computed(() => {
   let result = [...videos.value]
-  if (searchQuery.value)  result = result.filter(v => v.filename?.toLowerCase().includes(searchQuery.value.toLowerCase()))
-  if (filterRegion.value) result = result.filter(v => v.region === filterRegion.value)
+  if (searchQuery.value)  result = result.filter(v => v.name?.toLowerCase().includes(searchQuery.value.toLowerCase()))
+  if (filterRegion.value) result = result.filter(v => v.name === filterRegion.value)
   if (sortBy.value === 'date_desc') result.sort((a, b) => b.date.localeCompare(a.date))
   else if (sortBy.value === 'date_asc') result.sort((a, b) => a.date.localeCompare(b.date))
   else if (sortBy.value === 'region')   result.sort((a, b) => a.region.localeCompare(b.region))
