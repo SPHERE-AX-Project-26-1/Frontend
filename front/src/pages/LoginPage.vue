@@ -69,7 +69,7 @@
 import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import logo from "@/assets/logo.jpg";
-import { login } from "@/api/auth";
+import { login } from "@/api/authApi";
 
 const router = useRouter();
 const userId = ref("");
