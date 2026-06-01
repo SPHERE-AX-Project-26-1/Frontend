@@ -25,7 +25,6 @@
               <th class="px-5 py-3.5 text-sm font-bold text-[#1e2d52] text-left w-40">발생 일시</th>
               <th class="px-5 py-3.5 text-sm font-bold text-[#1e2d52] text-left w-32">이벤트 종류</th>
               <th class="px-5 py-3.5 text-sm font-bold text-[#1e2d52] text-left">상세 내용</th>
-              <th class="px-5 py-3.5 text-sm font-bold text-[#1e2d52] text-left w-24">사용자</th>
             </tr>
           </thead>
           <tbody>
@@ -41,7 +40,6 @@
                 </span>
               </td>
               <td class="px-5 py-3.5 text-sm text-[#1e2d52]">{{ log.detail }}</td>
-              <td class="px-5 py-3.5 text-sm font-semibold text-[#2c3e6b]">{{ log.username }}</td>
             </tr>
           </tbody>
         </table>
@@ -108,4 +106,3 @@ function exportCSV() {
 }
 
 </script>
-
