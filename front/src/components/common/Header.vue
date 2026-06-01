@@ -35,7 +35,7 @@
 
     <!-- 오른쪽 -->
     <div class="flex items-center gap-3 text-sm text-slate-700">
-      <span>{{ currentUser?.name || currentUser?.userId }}</span>
+      <span>{{ currentUser?.username || currentUser?.user_id }}</span>
       <span class="text-slate-300">|</span>
       <button
         class="hover:text-blue-900 transition cursor-pointer"
