@@ -1,8 +1,13 @@
 import axios from "axios";
 
-const apiClient = axios.create({
+export const apiClient = axios.create({
   baseURL: import.meta.env.BACKEND_BASE_URL || "http://localhost:8001/api",
-  timeout: 10000,
+  timeout: 25000,
+});
+
+export const analysisClient = axios.create({
+  baseURL: import.meta.env.BACKEND_BASE_URL || "http://localhost:8001/api",
+  timeout: 120000,
 });
 
 const PUBLIC_ENDPOINTS = [

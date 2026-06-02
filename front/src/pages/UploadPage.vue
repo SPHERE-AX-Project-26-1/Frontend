@@ -362,8 +362,8 @@
 <script setup>
 import axios from "axios";
 import { computed, onMounted, ref, watch } from "vue";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+import { uploadVideo } from "../api/videoApi";
+import { getRiverList } from "../api/regionApi";
 
 const step = ref(1); // 1: 드롭박스만 / 2: 정보확인 / 3: 분석 요청 후
 const selectedFile = ref(null);
@@ -545,9 +545,8 @@ const fetchRivers = async () => {
   riverErrorMessage.value = "";
 
   try {
-    const response = await axios.get(`${API_BASE_URL}/rivers/`);
-
-    riverOptions.value = response.data?.items || [];
+    const response = await getRiverList();
+    riverOptions.value = response.items || [];
   } catch (error) {
     console.error("유역 목록 조회 실패:", error);
     riverErrorMessage.value = "유역 목록을 불러오지 못했습니다.";
@@ -680,21 +679,6 @@ const startAnalysis = async () => {
     return;
   }
 
-  const formData = new FormData();
-
-  // API 명세서 기준:
-  // {
-  //   file: "File",
-  //   riverId: 1,
-  //   date: "2026-03-15",
-  //   duration: 192
-  // }
-
-  formData.append("file", selectedFile.value);
-  formData.append("riverId", selectedRiverId.value);
-  formData.append("date", selectedDate.value);
-  formData.append("duration", fileInfo.value.durationSeconds);
-
   step.value = 3;
   analysisStatus.value = "loading";
   analysisResultMessage.value = "";
@@ -705,33 +689,18 @@ const startAnalysis = async () => {
   const timer = startFakeProgress();
 
   try {
-    const response = await axios.post(`${API_BASE_URL}/videos/`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+    const result = await uploadVideo({
+      file: selectedFile.value,
+      riverId: selectedRiverId.value,
+      date: selectedDate.value,
+      duration: fileInfo.value.durationSeconds,
     });
-
-    // 성공 응답:
-    // {
-    //   id: 12,
-    //   status: "COMPLETE",
-    //   skygazerCount: 12,
-    //   message: "영상 분석이 완료되었습니다."
-    // }
-    //
-    // 실패 응답:
-    // {
-    //   id: 12,
-    //   status: "FAIL",
-    //   message: "영상 분석에 실패했습니다."
-    // }
-
-    const result = response.data;
+    console.log("영상 분석 결과:", result);
 
     clearInterval(timer);
     progress.value = 100;
 
-    if (result.status === "COMPLETE") {
+    if (result.status === "COMPLETED") {
       analysisStatus.value = "success";
       skygazerCount.value = result.skygazerCount || 0;
       analysisResultMessage.value =
