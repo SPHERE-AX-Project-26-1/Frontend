@@ -1,9 +1,16 @@
 import apiClient from "./client";
 
 export const getRiverList = async (search, risk, sortBy) => {
-    const response = await apiClient.get("/rivers?search=" + search + "&risk=" + risk + "&sortBy=" + sortBy);
-    return response.data;
-}
+  const response = await apiClient.get("/rivers", {
+    params: {
+      search,
+      risk,
+      sortBy,
+    },
+  });
+
+  return response.data;
+};
 
 export const getRiverDetail = async (id) => {
     const response = await apiClient.get(`/rivers/${id}`);
