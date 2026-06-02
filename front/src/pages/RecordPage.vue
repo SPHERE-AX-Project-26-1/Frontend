@@ -100,7 +100,12 @@
 
           <!-- 썸네일 -->
           <div class="relative bg-gray-100 h-36 flex items-center justify-center">
-            <span class="text-3xl text-gray-300">▶</span>
+            <img
+              v-if="video.thumbnailPath"
+              :src="`http://localhost:8001/media/${video.thumbnailPath}`"
+              class="absolute inset-0 w-full h-full object-cover"
+            />
+            <span class="text-3xl text-gray-300 relative z-10">▶</span>
             <span
               v-if="getSeverity(video.skygazerCount) !== '보통'"
               :class="getSeverity(video.skygazerCount) === '위험' ? 'bg-red-500' : 'bg-yellow-400'"
