@@ -85,9 +85,14 @@
 
             <div class="mt-5 flex gap-2">
               <button
-                class="flex-1 rounded-2xl bg-[#08243D] py-3 text-sm font-bold text-white hover:bg-[#103A5D] transition"
+                class="flex-1 rounded-2xl bg-[#08243D] py-3 text-sm font-bold text-white hover:bg-[#103A5D] transition disabled:opacity-60 disabled:cursor-not-allowed"
+                :disabled="isRecordModalLoading"
                 @click.stop="openRecordModal(selectedRiver)">
+<<<<<<< Updated upstream
                 최근 분석 보기
+=======
+                {{ isRecordModalLoading ? "불러오는 중..." : "자세히 보기" }}
+>>>>>>> Stashed changes
               </button>
 
               <button
@@ -255,7 +260,11 @@ import { computed, ref, onMounted } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import RecordModal from "@/components/RecordModal.vue";
 import KakaoMap from "@/components/KakaoMap.vue";
+<<<<<<< Updated upstream
 import { mockVideos, riverCoordinates } from "@/data/mockVideos";
+=======
+import { getVideoList, getVideoDetail } from "@/api/videoApi";
+>>>>>>> Stashed changes
 
 const router = useRouter();
 
@@ -266,6 +275,7 @@ const showRecordModal = ref(false);
 const activeVideo = ref(null);
 const selectedRiver = ref(null);
 
+<<<<<<< Updated upstream
 /*
   mockVideos에 있는 region을 기준으로 유역 데이터를 자동 생성
   같은 유역의 여러 영상은 하나의 마커로 묶임
@@ -315,11 +325,223 @@ const rivers = computed(() => {
     };
   });
 });
+=======
+const isLoading = ref(false);
+const isRecordModalLoading = ref(false);
+const errorMessage = ref("");
+
+const summary = ref({
+  totalRiverCount: 0,
+  detectedRiverCount: 0,
+  dangerRiverCount: 0,
+  totalSkygazerCount: 0,
+});
+
+const rivers = ref([]);
+const recentEvents = ref([]);
+const topRivers = ref([]);
+
+const API = {
+  summary: "/api/dashboard/summary",
+  riverMarkers: "/api/rivers/",
+  recentEvents: "/api/videos/?sortBy=date_desc&page=1&pageSize=4",
+  topRivers: "/api/dashboard/top-rivers",
+};
+>>>>>>> Stashed changes
 
 onMounted(() => {
   selectedRiver.value = rivers.value[0] ?? null;
 });
 
+<<<<<<< Updated upstream
+=======
+async function fetchDashboardData() {
+  isLoading.value = true;
+  errorMessage.value = "";
+
+  try {
+    const [summaryData, riverMarkerData, recentEventData, topRiverData] =
+      await Promise.all([
+        fetchJson(API.summary),
+        fetchJson(API.riverMarkers),
+        fetchJson(API.recentEvents),
+        fetchJson(API.topRivers),
+      ]);
+
+    summary.value = {
+      totalRiverCount: summaryData.totalRiverCount ?? 0,
+      detectedRiverCount: summaryData.detectedRiverCount ?? 0,
+      dangerRiverCount: summaryData.dangerRiverCount ?? 0,
+      totalSkygazerCount: summaryData.totalSkygazerCount ?? 0,
+    };
+
+    rivers.value =
+      normalizeRiverResponse(riverMarkerData).map(normalizeRiverMarker);
+
+    recentEvents.value = normalizeListResponse(recentEventData)
+      .map((event) => normalizeRecentEvent(event, rivers.value))
+      .slice(0, 4);
+
+    topRivers.value = normalizeListResponse(topRiverData).map((river) =>
+      normalizeTopRiver(river, rivers.value),
+    );
+
+    selectedRiver.value = rivers.value[0] ?? null;
+  } catch (error) {
+    console.error(error);
+    errorMessage.value =
+      "대시보드 데이터를 불러오지 못했습니다. 백엔드 서버 또는 API 주소를 확인해주세요.";
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+async function fetchJson(url) {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`${url} 요청 실패: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+function normalizeRiverResponse(data) {
+  if (Array.isArray(data)) return data;
+
+  if (Array.isArray(data?.items)) return data.items;
+
+  if (Array.isArray(data?.rivers)) return data.rivers;
+
+  return [];
+}
+
+function normalizeListResponse(data) {
+  if (Array.isArray(data)) return data;
+
+  if (Array.isArray(data?.items)) return data.items;
+
+  if (Array.isArray(data?.results)) return data.results;
+
+  if (Array.isArray(data?.videos)) return data.videos;
+
+  return [];
+}
+
+function normalizeRiverMarker(river) {
+  const risk = river.risk ?? "보통";
+
+  return {
+    id: river.id,
+    name: river.name ?? "",
+    address: river.address ?? "",
+    latitude: river.latitude ?? "",
+    longitude: river.longitude ?? "",
+    lastAnalyzedAt: river.lastAnalyzedAt ?? "",
+    totalSkygazerCount: river.totalSkygazerCount ?? 0,
+    latestSkygazerCount: river.latestSkygazerCount ?? 0,
+    risk,
+    status: river.status ?? getStatusByRisk(risk),
+    latestVideoId: river.latestVideoId ?? river.videoId ?? null,
+    cautionThreshold: river.cautionThreshold,
+    dangerThreshold: river.dangerThreshold,
+  };
+}
+
+function normalizeRecentEvent(event, riverList = []) {
+  const riverName =
+    event.riverName ??
+    event.regionName ??
+    event.river?.name ??
+    event.region?.name ??
+    event.name ??
+    "";
+
+  const riverId =
+    event.riverId ??
+    event.regionId ??
+    event.river?.id ??
+    event.region?.id ??
+    null;
+
+  const matchedRiver = findMatchedRiver({
+    riverList,
+    riverId,
+    riverName,
+  });
+
+  const risk = event.risk ?? matchedRiver?.risk ?? "보통";
+
+  return {
+    id: event.id,
+    videoId: event.videoId ?? event.video_id ?? event.id,
+    filename: event.filename ?? event.fileName ?? "",
+    date: event.date ?? event.uploadDate ?? event.createdAt ?? "",
+    uploadDate: event.uploadDate ?? event.date ?? event.createdAt ?? "",
+    uploadTime: event.uploadTime ?? event.createdAt ?? "",
+    name: riverName || matchedRiver?.name || "",
+    riverName: riverName || matchedRiver?.name || "",
+    riverId: riverId ?? matchedRiver?.id ?? null,
+    address: event.address ?? matchedRiver?.address ?? "",
+    latitude: event.latitude ?? matchedRiver?.latitude ?? "",
+    longitude: event.longitude ?? matchedRiver?.longitude ?? "",
+    skygazerCount: event.skygazerCount ?? event.latestSkygazerCount ?? 0,
+    totalCount: event.totalCount ?? event.totalSkygazerCount ?? 0,
+    weather: event.weather ?? "",
+    duration: event.duration ?? "",
+    risk,
+  };
+}
+
+function normalizeTopRiver(river, riverList = []) {
+  const riverName =
+    river.riverName ??
+    river.regionName ??
+    river.name ??
+    river.river?.name ??
+    river.region?.name ??
+    "";
+
+  const riverId =
+    river.riverId ??
+    river.regionId ??
+    river.river?.id ??
+    river.region?.id ??
+    river.id ??
+    null;
+
+  const matchedRiver = findMatchedRiver({
+    riverList,
+    riverId,
+    riverName,
+  });
+
+  const risk = matchedRiver?.risk ?? river.risk ?? "보통";
+
+  return {
+    id: matchedRiver?.id ?? river.id,
+    name: matchedRiver?.name ?? riverName,
+    totalSkygazerCount:
+      river.totalSkygazerCount ?? matchedRiver?.totalSkygazerCount ?? 0,
+    risk,
+  };
+}
+
+function findMatchedRiver({ riverList, riverId, riverName }) {
+  return riverList.find((river) => {
+    const isSameId =
+      riverId !== null &&
+      riverId !== undefined &&
+      String(river.id) === String(riverId);
+
+    const isSameName =
+      riverName && river.name && river.name.trim() === riverName.trim();
+
+    return isSameId || isSameName;
+  });
+}
+
+>>>>>>> Stashed changes
 const filteredRivers = computed(() => {
   if (selectedFilter.value === "전체") return rivers.value;
 
@@ -410,6 +632,7 @@ const statusItems = computed(() => {
   ];
 });
 
+<<<<<<< Updated upstream
 const topRivers = computed(() => {
   return [...rivers.value]
     .sort((a, b) => b.totalSkygazerCount - a.totalSkygazerCount)
@@ -428,6 +651,157 @@ function openRecordModal(river) {
 
   activeVideo.value = latestVideo;
   showRecordModal.value = true;
+=======
+async function openRecordModal(river) {
+  if (isRecordModalLoading.value) return;
+
+  isRecordModalLoading.value = true;
+
+  try {
+    const latestVideo = await fetchLatestVideoByRiver(river);
+
+    if (!latestVideo) {
+      alert(`${river.name}의 분석 기록이 없습니다.`);
+      return;
+    }
+
+    const videoId = latestVideo.videoId ?? latestVideo.id;
+
+    if (!videoId) {
+      alert(`${river.name}의 최신 영상 ID를 찾지 못했습니다.`);
+      return;
+    }
+
+    const detail = await getVideoDetail(videoId);
+
+    activeVideo.value = {
+      ...detail,
+      nameAvg: detail.regionAvg,
+      id: detail.id ?? videoId,
+      videoId,
+      name: detail.name ?? detail.riverName ?? latestVideo.name ?? river.name,
+      riverName:
+        detail.riverName ?? detail.name ?? latestVideo.riverName ?? river.name,
+      address: detail.address ?? latestVideo.address ?? river.address,
+      latitude: detail.latitude ?? latestVideo.latitude ?? river.latitude,
+      longitude: detail.longitude ?? latestVideo.longitude ?? river.longitude,
+      date: detail.date ?? latestVideo.date ?? river.lastAnalyzedAt,
+      uploadDate:
+        detail.uploadDate ?? latestVideo.uploadDate ?? river.lastAnalyzedAt,
+      uploadTime:
+        detail.uploadTime ?? latestVideo.uploadTime ?? river.lastAnalyzedAt,
+      skygazerCount:
+        detail.skygazerCount ??
+        latestVideo.skygazerCount ??
+        river.latestSkygazerCount,
+      totalSkygazerCount:
+        detail.totalSkygazerCount ??
+        latestVideo.totalSkygazerCount ??
+        river.totalSkygazerCount,
+      totalCount: detail.totalCount ?? latestVideo.totalCount,
+      risk: detail.risk ?? latestVideo.risk ?? river.risk,
+    };
+
+    showRecordModal.value = true;
+  } catch (error) {
+    console.error(error);
+    alert(
+      error.message || `${river.name}의 최신 분석 기록을 불러오지 못했습니다.`,
+    );
+  } finally {
+    isRecordModalLoading.value = false;
+  }
+}
+
+async function fetchLatestVideoByRiver(river) {
+  const videoData = await getVideoList("", "", "date_desc", 1, 1000, "");
+  const videoList = normalizeListResponse(videoData).map((video) =>
+    normalizeVideoForMatch(video, rivers.value),
+  );
+
+  const matchedVideos = videoList
+    .filter((video) => isSameRiverVideo(video, river))
+    .sort(compareVideoDateDesc);
+
+  return matchedVideos[0] ?? null;
+}
+
+function normalizeVideoForMatch(video, riverList = []) {
+  const riverName =
+    video.riverName ??
+    video.regionName ??
+    video.river?.name ??
+    video.region?.name ??
+    video.name ??
+    "";
+
+  const riverId =
+    video.riverId ??
+    video.regionId ??
+    video.river?.id ??
+    video.region?.id ??
+    null;
+
+  const matchedRiver = findMatchedRiver({
+    riverList,
+    riverId,
+    riverName,
+  });
+
+  return {
+    ...video,
+    id: video.id,
+    videoId: video.videoId ?? video.video_id ?? video.id,
+    riverId: riverId ?? matchedRiver?.id ?? null,
+    name: riverName || matchedRiver?.name || video.name || "",
+    riverName: riverName || matchedRiver?.name || video.name || "",
+    address: video.address ?? matchedRiver?.address ?? "",
+    latitude: video.latitude ?? matchedRiver?.latitude ?? "",
+    longitude: video.longitude ?? matchedRiver?.longitude ?? "",
+    date: video.date ?? video.uploadDate ?? video.createdAt ?? "",
+    uploadDate: video.uploadDate ?? video.date ?? video.createdAt ?? "",
+    uploadTime: video.uploadTime ?? video.createdAt ?? "",
+    skygazerCount: video.skygazerCount ?? video.latestSkygazerCount ?? 0,
+    totalSkygazerCount:
+      video.totalSkygazerCount ?? matchedRiver?.totalSkygazerCount ?? 0,
+    totalCount: video.totalCount ?? 0,
+    risk: video.risk ?? matchedRiver?.risk ?? "보통",
+  };
+}
+
+function isSameRiverVideo(video, river) {
+  const isSameId =
+    video.riverId !== null &&
+    video.riverId !== undefined &&
+    String(video.riverId) === String(river.id);
+
+  const isSameName =
+    video.riverName &&
+    river.name &&
+    video.riverName.trim() === river.name.trim();
+
+  const isSameNameAlt =
+    video.name && river.name && video.name.trim() === river.name.trim();
+
+  return isSameId || isSameName || isSameNameAlt;
+}
+
+function compareVideoDateDesc(a, b) {
+  return getVideoDateValue(b) - getVideoDateValue(a);
+}
+
+function getVideoDateValue(video) {
+  const dateValue =
+    video.uploadTime ?? video.uploadDate ?? video.date ?? video.createdAt ?? "";
+
+  const timestamp = new Date(dateValue).getTime();
+
+  if (Number.isNaN(timestamp)) {
+    return 0;
+  }
+
+  return timestamp;
+>>>>>>> Stashed changes
 }
 
 function closeRecordModal() {
@@ -445,12 +819,6 @@ function goRecordPage(river) {
 function getRiskByCount(count) {
   if (count >= 40) return "위험";
   if (count >= 10) return "주의";
-  return "보통";
-}
-
-function getRiskByVideoCount(count) {
-  if (count >= 10) return "위험";
-  if (count >= 5) return "주의";
   return "보통";
 }
 
