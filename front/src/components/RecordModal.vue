@@ -82,9 +82,19 @@
         <div class="flex flex-col gap-3">
 
           <!-- 영상 플레이어 -->
-          <div class="bg-gray-700 rounded-lg flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-gray-600 transition" style="min-height: 200px;">
-            <span class="text-3xl text-white/60">▶</span>
-            <span class="text-sm text-white/50">클릭하여 영상 재생</span>
+          <div class="rounded-lg overflow-hidden bg-gray-900" style="min-height: 200px;">
+            <video
+              v-if="video.filePath"
+              :src="`http://localhost:8001/media/${video.filePath}`"
+              :poster="video.thumbnailPath ? `http://localhost:8001/media/${video.thumbnailPath}` : undefined"
+              controls
+              class="w-full h-full"
+              style="min-height: 200px;"
+            />
+            <div v-else class="flex flex-col items-center justify-center gap-3 h-full" style="min-height: 200px;">
+              <span class="text-3xl text-white/60">▶</span>
+              <span class="text-sm text-white/50">영상을 불러올 수 없습니다</span>
+            </div>
           </div>
 
           <!-- 강준치 발견 시점 -->
