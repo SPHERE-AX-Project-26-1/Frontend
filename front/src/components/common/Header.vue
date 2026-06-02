@@ -61,7 +61,11 @@ try {
 } catch {}
 const currentUser = ref(stored);
 
+let isLoggingOut = false;
+
 function logout() {
+  if (isLoggingOut) return;
+  isLoggingOut = true;
   logoutApi()
     .then(() => {
       localStorage.removeItem("accessToken");
@@ -71,6 +75,9 @@ function logout() {
     .catch((error) => {
       console.error("Logout failed:", error);
       alert("로그아웃에 실패했습니다. 다시 시도해주세요.");
+    })
+    .finally(() => {
+      isLoggingOut = false;
     });
 }
 
