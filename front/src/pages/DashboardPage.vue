@@ -64,7 +64,7 @@
               <div class="rounded-2xl bg-[#F4FAFE] p-3">
                 <p class="text-xs text-slate-400">최근 분석일</p>
                 <p class="mt-1 text-sm font-bold text-slate-700">
-                  {{ selectedRiver.lastAnalyzedAt }}
+                  {{ selectedRiver.lastAnalyzedAt || "-" }}
                 </p>
               </div>
 
@@ -78,7 +78,7 @@
               <div class="rounded-2xl bg-[#F4FAFE] p-3">
                 <p class="text-xs text-slate-400">관리 상태</p>
                 <p class="mt-1 text-sm font-bold text-slate-700">
-                  {{ selectedRiver.status }}
+                  {{ selectedRiver.status || "-" }}
                 </p>
               </div>
             </div>
@@ -88,11 +88,7 @@
                 class="flex-1 rounded-2xl bg-[#08243D] py-3 text-sm font-bold text-white hover:bg-[#103A5D] transition disabled:opacity-60 disabled:cursor-not-allowed"
                 :disabled="isRecordModalLoading"
                 @click.stop="openRecordModal(selectedRiver)">
-<<<<<<< Updated upstream
-                최근 분석 보기
-=======
                 {{ isRecordModalLoading ? "불러오는 중..." : "자세히 보기" }}
->>>>>>> Stashed changes
               </button>
 
               <button
@@ -122,9 +118,24 @@
             </RouterLink>
           </div>
 
+          <!-- 로딩 / 에러 -->
+          <div v-if="isLoading" class="mt-6 text-sm text-slate-400">
+            대시보드 데이터를 불러오는 중입니다.
+          </div>
+
+          <div v-else-if="errorMessage" class="mt-6 text-sm text-red-500">
+            {{ errorMessage }}
+          </div>
+
           <!-- 최근 분석 이벤트 타임라인 -->
-          <div class="mt-6">
-            <div class="relative">
+          <div v-else class="mt-6">
+            <div
+              v-if="recentEvents.length === 0"
+              class="text-sm text-slate-400">
+              최근 분석 이벤트가 없습니다.
+            </div>
+
+            <div v-else class="relative">
               <div
                 v-for="(event, index) in recentEvents"
                 :key="event.id"
@@ -132,7 +143,7 @@
                 <!-- 시간 -->
                 <div class="pt-0.5 text-right">
                   <p class="text-[11px] font-bold leading-tight text-slate-500">
-                    {{ event.date }}
+                    {{ formatShortDate(event.date) }}
                   </p>
                   <p class="mt-0.5 text-xs font-extrabold text-[#08243D]">
                     {{ getTime(event.uploadTime) }}
@@ -160,7 +171,7 @@
 
                       <p
                         class="mt-1.5 text-sm leading-relaxed text-slate-600"
-                        v-html="event.message"></p>
+                        v-html="getEventMessage(event)"></p>
                     </div>
 
                     <span
@@ -182,7 +193,11 @@
               </h3>
             </div>
 
-            <div class="space-y-3">
+            <div v-if="topRivers.length === 0" class="text-sm text-slate-400">
+              검출 빈도 데이터가 없습니다.
+            </div>
+
+            <div v-else class="space-y-3">
               <div
                 v-for="(river, index) in topRivers"
                 :key="river.id"
@@ -256,15 +271,11 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import RecordModal from "@/components/RecordModal.vue";
 import KakaoMap from "@/components/KakaoMap.vue";
-<<<<<<< Updated upstream
-import { mockVideos, riverCoordinates } from "@/data/mockVideos";
-=======
 import { getVideoList, getVideoDetail } from "@/api/videoApi";
->>>>>>> Stashed changes
 
 const router = useRouter();
 
@@ -275,57 +286,6 @@ const showRecordModal = ref(false);
 const activeVideo = ref(null);
 const selectedRiver = ref(null);
 
-<<<<<<< Updated upstream
-/*
-  mockVideos에 있는 region을 기준으로 유역 데이터를 자동 생성
-  같은 유역의 여러 영상은 하나의 마커로 묶임
-*/
-const rivers = computed(() => {
-  const riverMap = new Map();
-
-  mockVideos.forEach((video) => {
-    if (!riverMap.has(video.region)) {
-      riverMap.set(video.region, []);
-    }
-
-    riverMap.get(video.region).push(video);
-  });
-
-  return Array.from(riverMap.entries()).map(([riverName, videos]) => {
-    const sortedVideos = [...videos].sort((a, b) =>
-      b.date.localeCompare(a.date),
-    );
-
-    const latestVideo = sortedVideos[0];
-
-    const totalSkygazerCount = videos.reduce(
-      (sum, video) => sum + video.skygazerCount,
-      0,
-    );
-
-    const latestSkygazerCount = latestVideo?.skygazerCount ?? 0;
-
-    const risk = getRiskByCount(totalSkygazerCount);
-    const coordinate = riverCoordinates[riverName];
-
-    return {
-      id: riverName,
-      name: riverName,
-      address: latestVideo.location,
-      lastAnalyzedAt: latestVideo.date,
-      totalSkygazerCount,
-      latestSkygazerCount,
-      risk,
-      status: getStatusByRisk(risk),
-      latestVideoId: latestVideo.id,
-
-      // 카카오맵 마커 표시용 좌표
-      latitude: coordinate?.latitude,
-      longitude: coordinate?.longitude,
-    };
-  });
-});
-=======
 const isLoading = ref(false);
 const isRecordModalLoading = ref(false);
 const errorMessage = ref("");
@@ -347,14 +307,11 @@ const API = {
   recentEvents: "/api/videos/?sortBy=date_desc&page=1&pageSize=4",
   topRivers: "/api/dashboard/top-rivers",
 };
->>>>>>> Stashed changes
 
 onMounted(() => {
-  selectedRiver.value = rivers.value[0] ?? null;
+  fetchDashboardData();
 });
 
-<<<<<<< Updated upstream
-=======
 async function fetchDashboardData() {
   isLoading.value = true;
   errorMessage.value = "";
@@ -541,65 +498,17 @@ function findMatchedRiver({ riverList, riverId, riverName }) {
   });
 }
 
->>>>>>> Stashed changes
 const filteredRivers = computed(() => {
   if (selectedFilter.value === "전체") return rivers.value;
 
   return rivers.value.filter((river) => river.risk === selectedFilter.value);
 });
 
-const recentEvents = computed(() => {
-  return [...mockVideos]
-    .sort((a, b) => b.uploadTime.localeCompare(a.uploadTime))
-    .slice(0, 4)
-    .map((video) => {
-      const skygazerCount = video.skygazerCount;
-      const risk = getRiskByVideoCount(skygazerCount);
-
-      return {
-        id: video.id,
-        filename: video.filename,
-        date: formatShortDate(video.date),
-        uploadDate: video.uploadDate,
-        uploadTime: video.uploadTime,
-        name: video.region,
-        latitude: video.latitude,
-        longitude: video.longitude,
-        skygazerCount,
-        totalCount: video.totalCount,
-        weather: video.weather,
-        duration: video.duration,
-        message:
-          skygazerCount > 0
-            ? `강준치 ${skygazerCount}마리 탐지${
-                risk === "위험" ? "<br>- 집중 모니터링 필요" : ""
-              }`
-            : "강준치 탐지 없음",
-        risk,
-      };
-    });
-});
-
 const statusItems = computed(() => {
-  const totalRiverCount = rivers.value.length;
-
-  const detectedRiverCount = rivers.value.filter(
-    (river) => river.totalSkygazerCount > 0,
-  ).length;
-
-  const dangerRiverCount = rivers.value.filter(
-    (river) => river.risk === "위험",
-  ).length;
-
-  const totalSkygazerCount = mockVideos.reduce(
-    (sum, video) => sum + video.skygazerCount,
-    0,
-  );
-
   return [
     {
       label: "전체 유역",
-      value: totalRiverCount,
+      value: summary.value.totalRiverCount,
       unit: "곳",
       description: "등록된 모니터링 유역",
       barColor: "bg-sky-300",
@@ -607,7 +516,7 @@ const statusItems = computed(() => {
     },
     {
       label: "검출 유역",
-      value: detectedRiverCount,
+      value: summary.value.detectedRiverCount,
       unit: "곳",
       description: "강준치 탐지 이력 존재",
       barColor: "bg-blue-400",
@@ -615,7 +524,7 @@ const statusItems = computed(() => {
     },
     {
       label: "위험 유역",
-      value: dangerRiverCount,
+      value: summary.value.dangerRiverCount,
       unit: "곳",
       description: "즉시 점검 필요",
       barColor: "bg-red-400",
@@ -623,7 +532,7 @@ const statusItems = computed(() => {
     },
     {
       label: "누적 탐지",
-      value: totalSkygazerCount,
+      value: summary.value.totalSkygazerCount,
       unit: "마리",
       description: "등록 영상 누적 기준",
       barColor: "bg-[#08243D]",
@@ -632,26 +541,6 @@ const statusItems = computed(() => {
   ];
 });
 
-<<<<<<< Updated upstream
-const topRivers = computed(() => {
-  return [...rivers.value]
-    .sort((a, b) => b.totalSkygazerCount - a.totalSkygazerCount)
-    .slice(0, 3);
-});
-
-function openRecordModal(river) {
-  const latestVideo = mockVideos
-    .filter((video) => video.region === river.name)
-    .sort((a, b) => b.date.localeCompare(a.date))[0];
-
-  if (!latestVideo) {
-    alert(`${river.name}의 분석 기록이 없습니다.`);
-    return;
-  }
-
-  activeVideo.value = latestVideo;
-  showRecordModal.value = true;
-=======
 async function openRecordModal(river) {
   if (isRecordModalLoading.value) return;
 
@@ -801,7 +690,6 @@ function getVideoDateValue(video) {
   }
 
   return timestamp;
->>>>>>> Stashed changes
 }
 
 function closeRecordModal() {
@@ -812,14 +700,18 @@ function closeRecordModal() {
 function goRecordPage(river) {
   router.push({
     path: "/app/history",
-    query: { region: river.name },
+    query: { riverId: river.id, name: river.name },
   });
 }
 
-function getRiskByCount(count) {
-  if (count >= 40) return "위험";
-  if (count >= 10) return "주의";
-  return "보통";
+function getEventMessage(event) {
+  if (event.skygazerCount > 0) {
+    return `강준치 ${event.skygazerCount}마리 탐지${
+      event.risk === "위험" ? "<br>- 집중 모니터링 필요" : ""
+    }`;
+  }
+
+  return "강준치 탐지 없음";
 }
 
 function getStatusByRisk(risk) {
@@ -829,11 +721,18 @@ function getStatusByRisk(risk) {
 }
 
 function formatShortDate(date) {
+  if (!date) return "-";
+
   const [year, month, day] = date.split("-");
+
+  if (!year || !month || !day) return date;
+
   return `${year.slice(2)}-${month}-${day}`;
 }
 
 function getTime(uploadTime) {
+  if (!uploadTime) return "";
+
   return uploadTime.split(" ")[1] ?? "";
 }
 
