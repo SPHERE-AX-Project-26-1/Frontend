@@ -695,8 +695,6 @@ const startAnalysis = async () => {
       date: selectedDate.value,
       duration: fileInfo.value.durationSeconds,
     });
-    console.log("영상 분석 결과:", result);
-
     clearInterval(timer);
     progress.value = 100;
 

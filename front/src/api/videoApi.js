@@ -37,7 +37,7 @@ export const uploadVideo = async ({ file, riverId, duration, date }) => {
   formData.append("date", date);
 
   const response = await analysisClient.post("/videos/upload", formData, {
-    timeout: 120000,
+    timeout: 150000,
   });
 
   return response.data;
