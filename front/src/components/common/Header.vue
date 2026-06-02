@@ -50,7 +50,7 @@
 import { ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import logo from "../../assets/logo.jpg";
-import { logout } from "../../api/authApi";
+import { logout as logoutApi } from "../../api/authApi";
 
 const route = useRoute();
 const router = useRouter();
@@ -62,9 +62,10 @@ try {
 const currentUser = ref(stored);
 
 function logout() {
-  logout()
+  logoutApi()
     .then(() => {
       localStorage.removeItem("accessToken");
+      localStorage.removeItem("currentUser");
       router.push("/");
     })
     .catch((error) => {
