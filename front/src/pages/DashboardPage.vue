@@ -301,20 +301,6 @@ const rivers = ref([]);
 const recentEvents = ref([]);
 const topRivers = ref([]);
 
-/*
-  전체 요약 조회:
-  GET /api/dashboard/summary
-
-  대시보드 지도 유역 목록:
-  GET /api/rivers/
-  유역관리 페이지와 같은 API를 사용해서 risk 기준을 통일함.
-
-  최근 분석 이벤트 조회:
-  GET /api/videos/?sortBy=date_desc&page=1&pageSize=4
-
-  검출 빈도 TOP3 조회:
-  GET /api/dashboard/top-rivers
-*/
 const API = {
   summary: "/api/dashboard/summary",
   riverMarkers: "/api/rivers/",
