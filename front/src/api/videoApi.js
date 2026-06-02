@@ -1,9 +1,10 @@
-import apiClient from "./client";
+import { apiClient, analysisClient } from "./client";
 
 
-export const getVideoList = async (search, name, sortBy, page, pageSize) => {
-    const response = await apiClient.get("/videos?search=" + search + "&name=" + name + 
-        "&sortBy=" + sortBy + "&page=" + page + "&pageSize=" + pageSize);
+export const getVideoList = async (search, name, sortBy, page, pageSize, startDate = '', endDate = '') => {
+    const response = await apiClient.get("/videos?search=" + search + "&name=" + name +
+        "&sortBy=" + sortBy + "&page=" + page + "&pageSize=" + pageSize +
+        "&startDate=" + startDate + "&endDate=" + endDate);
     return response.data;
 }
 
@@ -14,7 +15,7 @@ export const getRegionNames = async () => {
 }
 
 export const deleteVideos = async (ids) => {
-  const response = await apiClient.delete("/videos", {
+  const response = await apiClient.delete("/videos/", {
     data: { ids },
   });
 
@@ -35,7 +36,9 @@ export const uploadVideo = async ({ file, riverId, duration, date }) => {
   formData.append("duration", duration);
   formData.append("date", date);
 
-  const response = await apiClient.post("/videos/upload", formData);
+  const response = await analysisClient.post("/videos/upload", formData, {
+    timeout: 120000,
+  });
 
   return response.data;
 };
