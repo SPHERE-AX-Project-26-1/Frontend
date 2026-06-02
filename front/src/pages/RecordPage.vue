@@ -51,12 +51,12 @@
 
         <!-- 날짜 -->
         <div class="flex items-center gap-1.5">
-          <span class="text-xs text-gray-400 whitespace-nowrap">날짜</span>
-          <div class="bg-gray-50 border border-gray-100 rounded-md px-3 py-2">
-            <select class="text-sm text-[#2c3e6b] bg-transparent outline-none cursor-pointer font-medium">
-              <option>전체 기간</option>
-            </select>
+          <span class="text-xs text-gray-400 whitespace-nowrap">업로드 날짜</span>
+          <div class="relative">
+            <input v-model="filterDate" type="date" :class="filterDate ? 'text-[#2c3e6b]' : 'text-transparent'" class="bg-gray-50 border border-gray-100 rounded-md px-3 py-2 text-sm outline-none" />
+            <span v-if="!filterDate" class="absolute inset-0 flex items-center px-3 text-sm text-[#2c3e6b] font-medium pointer-events-none">전체 기간</span>
           </div>
+          <button v-if="filterDate" @click="filterDate = ''" class="text-xs text-gray-400 hover:text-gray-600 cursor-pointer">초기화</button>
         </div>
 
         <!-- 총 건수 -->
@@ -172,6 +172,7 @@ const regions = ref([])
 const searchQuery  = ref('')
 const sortBy       = ref('date_desc')
 const filterRegion = ref('')
+const filterDate   = ref('')
 const isDeleteMode = ref(false)
 const selectedIds  = ref([])
 const showModal    = ref(false)
@@ -194,7 +195,7 @@ const filteredVideos = computed(() => {
 })
 
 const isFiltered = computed(() =>
-  !!searchQuery.value || !!filterRegion.value || sortBy.value !== 'date_desc'
+  !!searchQuery.value || !!filterRegion.value || sortBy.value !== 'date_desc' || !!filterDate.value
 )
 
 const PAGE_SIZE   = 8
@@ -203,7 +204,14 @@ const isLoading   = ref(false)
 const sentinel    = ref(null)
 let observer = null
 
+async function fetchVideos() {
+  const videoData = await getVideoList('', '', sortBy.value, 1, 100, filterDate.value)
+  videos.value = videoData.items
+  currentPage.value = 1
+}
+
 watch([searchQuery, filterRegion, sortBy], () => { currentPage.value = 1 })
+watch(filterDate, fetchVideos)
 
 const displayedVideos = computed(() =>
   isFiltered.value
@@ -222,11 +230,10 @@ function loadMore() {
 }
 
 onMounted(async () => {
-  const [videoData, regionData] = await Promise.all([
-    getVideoList('', '', 'date_desc', 1, 100),
+  const [, regionData] = await Promise.all([
+    fetchVideos(),
     getRegionNames()
   ])
-  videos.value = videoData.items
   regions.value = regionData.name
 
   await nextTick()
